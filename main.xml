@@ -49,7 +49,7 @@
                     <light name="Sun" />
                 </lights>
                 <materialMaps>
-                    <map fromMaterial="*" toMaterial="MatEarth" toLibrary="ClothMaterials"/>
+                    <map fromMaterial="*" toMaterial="MatGrid" toLibrary="ClothMaterials"/>
                 </materialMaps>
             </pass>
 
