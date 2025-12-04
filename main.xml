@@ -16,7 +16,6 @@
             <viewport name="MainViewport">
                 <CLEAR_COLOR r="0.0" g="0.0" b="0.0" />
             </viewport>
-            <viewport name="OverlayViewport" />
         </viewports>
 
 		<cameras>
@@ -26,12 +25,6 @@
 				<VIEW x="0" y="-0.843" z="-0.537" />
                 <NEAR value="0.1" />
 			</camera>
-            <camera name="OverlayCamera" >
-                <viewport name="OverlayViewport" /> 
-                <POSITION x="0" y="7" z="5" />
-                <VIEW x="0" y="-0.843" z="-0.537" />
-                <NEAR value="0.1" />
-            </camera>
 		</cameras>
 		
 		<lights>
@@ -51,7 +44,8 @@
                 <scenes>
                     <scene name="Grid"/>
                 </scenes>
-                <camera name="MainCamera" /> <lights>
+                <camera name="MainCamera" /> 
+                <lights>
                     <light name="Sun" />
                 </lights>
                 <materialMaps>
@@ -60,10 +54,12 @@
             </pass>
 
             <pass class="default" name="PassoGrid">
+                <COLOR_CLEAR value="false" />
+                <DEPTH_CLEAR value="false" />
                 <scenes>
                     <scene name="Sphere"/>
                 </scenes>
-                <camera name="OverlayCamera" /> 
+                <camera name="MainCamera" /> 
                 <lights>
                     <light name="Sun" />
                 </lights>
