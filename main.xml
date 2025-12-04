@@ -1,0 +1,78 @@
+<?xml version="1.0" ?>
+<project name="Cloth Simulation Project" width="1920" height="1080">
+
+    <assets>
+        <scenes>
+            <scene name="Sphere" param="UNITIZE">
+                <file name="models/sphere.obj" />
+            </scene>
+            <scene name="Grid" param="UNITIZE">
+                <file name="models/grid.obj" />
+                <TRANSLATE x="0" y="2" z="0" />
+            </scene>
+        </scenes>
+
+        <viewports>
+            <viewport name="MainViewport">
+                <CLEAR_COLOR r="0.0" g="0.0" b="0.0" />
+            </viewport>
+            <viewport name="OverlayViewport" />
+        </viewports>
+
+		<cameras>
+			<camera name="MainCamera" >
+				<viewport name="MainViewport" />
+				<POSITION x="0" y="7" z="5" />
+				<VIEW x="0" y="-0.843" z="-0.537" />
+                <NEAR value="0.1" />
+			</camera>
+            <camera name="OverlayCamera" >
+                <viewport name="OverlayViewport" /> 
+                <POSITION x="0" y="7" z="5" />
+                <VIEW x="0" y="-0.843" z="-0.537" />
+                <NEAR value="0.1" />
+            </camera>
+		</cameras>
+		
+		<lights>
+			<light name="Sun">
+				<DIRECTION x="2" y="-1" z="-2" />
+			</light>
+		</lights>      
+
+        <materialLibs>
+            <materialLib filename="materials.mlib" />
+        </materialLibs>
+    </assets>
+    <pipelines>
+        <pipeline name="textures" default="true">
+
+            <pass class="default" name="PassoTerra">
+                <scenes>
+                    <scene name="Grid"/>
+                </scenes>
+                <camera name="MainCamera" /> <lights>
+                    <light name="Sun" />
+                </lights>
+                <materialMaps>
+                    <map fromMaterial="*" toMaterial="MatEarth" toLibrary="ClothMaterials"/>
+                </materialMaps>
+            </pass>
+
+            <pass class="default" name="PassoGrid">
+                <scenes>
+                    <scene name="Sphere"/>
+                </scenes>
+                <camera name="OverlayCamera" /> 
+                <lights>
+                    <light name="Sun" />
+                </lights>
+                <materialMaps>
+                    <map fromMaterial="*" toMaterial="MatEarth" toLibrary="ClothMaterials"/>
+                </materialMaps>
+            </pass>
+
+        </pipeline>
+    </pipelines>
+
+</project>
