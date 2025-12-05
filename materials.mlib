@@ -5,13 +5,23 @@
         <texture name="earth" filename="materials/Earth/earthDay.jpg" mipmap="true" />
         <texture name="continents" filename="materials/Earth/earthSpec.jpg" mipmap="true" />
         <texture name="lights" filename="materials/Earth/earthLights.jpg" mipmap="true" />
-    
+
         <texture name="albedo" filename="materials/Cloth/worn-blue-burlap-albedo.png" mipmap="true" />
         <texture name="ao" filename="materials/Cloth/worn-blue-burlap-ao.png" mipmap="true" />
         <texture name="height" filename="materials/Cloth/worn-blue-burlap-Height.png" mipmap="true" />
         <texture name="metalic" filename="materials/Cloth/worn-blue-burlap-Metallic.png" mipmap="true" />
         <texture name="normal" filename="materials/Cloth/worn-blue-burlap-Normal-dx.png" mipmap="true" />
         <texture name="roughness" filename="materials/Cloth/worn-blue-burlap-Roughness.png" mipmap="true" />
+
+        <texture name="left" filename="materials/MilkyWay/nx.png" />
+        <texture name="right" filename="materials/MilkyWay/px.png" />
+        <texture name="front" filename="materials/MilkyWay/pz.png" />
+        <texture name="back" filename="materials/MilkyWay/nz.png" />
+        <texture name="top" filename="materials/MilkyWay/py.png" />
+        <texture name="bottom" filename="materials/MilkyWay/ny.png" />
+
+        <cubemap name="MilkyWay" posX="materials/MilkyWay/px.png" negX="materials/MilkyWay/nx.png" posY="materials/MilkyWay/py.png" negY="materials/MilkyWay/ny.png" posZ="materials/MilkyWay/pz.png" negZ="materials/MilkyWay/nz.png" />
+
     </textures>
 
     <shaders>
@@ -24,7 +34,7 @@
                 <file name="shaders/noise.frag" />
             </ps>
         </shader>
-        
+
         <shader name="GridShader">
             <vs>
                 <file name="shaders/grid.vert" />
@@ -33,7 +43,18 @@
                 <file name="shaders/grid.frag" />
             </ps>
         </shader>
+
+        <shader name="SkyBox" vs ="shaders/skybox.vert" 
+                              ps="shaders/skybox.frag" />
+
     </shaders>
+
+    <states>
+        <state name="skybox">
+            <CULL_TYPE value="FRONT" />
+            <DEPTH_MASK value="false" />
+        </state>
+    </states>
 
     <materials>
         <material name="MatEarth">
@@ -56,7 +77,7 @@
                 <texture name="lights" UNIT="2" />
             </textures>
         </material>
-        
+
         <material name="MatGrid">
             <shader name="GridShader">
                 <values>
@@ -69,7 +90,7 @@
                     <valueof uniform="texHeight" type="TEXTURE_BINDING" component="UNIT" id="2" />
                     <valueof uniform="texMetalic" type="TEXTURE_BINDING" component="UNIT" id="3" />
                     <valueof uniform="texNormal" type="TEXTURE_BINDING" component="UNIT" id="4" />
-                    <valueof uniform="texRoughness" type="TEXTURE_BINDING" component="UNIT" id="5" />                
+                    <valueof uniform="texRoughness" type="TEXTURE_BINDING" component="UNIT" id="5" />
                 </values>
             </shader>
             <textures>
@@ -80,6 +101,72 @@
                 <texture name="normal" UNIT="4" />
                 <texture name="roughness" UNIT="5" />
             </textures>
+        </material>
+        <material name="skybox" >
+            <shader name="SkyBox" >
+                <values>
+                    <valueof uniform="m_pvm" 
+                            type="RENDERER" 
+                            component="PROJECTION_VIEW_MODEL" />
+                    <valueof uniform="cam_pos" 
+                            type="CAMERA"
+                            component="POSITION" />
+                    <valueof uniform="tex_back" 
+                            type="TEXTURE_BINDING" 
+                            component="UNIT" id ="0" />
+                     <valueof uniform="tex_left" 
+                            type="TEXTURE_BINDING" 
+                            component="UNIT" id ="1" />
+                     <valueof uniform="tex_front" 
+                            type="TEXTURE_BINDING" 
+                            component="UNIT" id ="2" />
+                      <valueof uniform="tex_right" 
+                            type="TEXTURE_BINDING" 
+                            component="UNIT" id ="3" />
+                      <valueof uniform="tex_top" 
+                            type="TEXTURE_BINDING" 
+                            component="UNIT" id ="4" />
+                      <valueof uniform="tex_bottom" 
+                            type="TEXTURE_BINDING" 
+                            component="UNIT" id ="5" />
+
+                      <valueof uniform="tex_cm" 
+                            type="TEXTURE_BINDING" 
+                            component="UNIT" id ="6" />
+
+              </values>
+            </shader>
+            <textures>
+                <texture name="back" UNIT="0" >
+                    <WRAP_S value="CLAMP_TO_EDGE" />
+                    <WRAP_T value="CLAMP_TO_EDGE" />
+                </texture>
+                <texture name="left" UNIT="1" >
+                    <WRAP_S value="CLAMP_TO_EDGE" />
+                    <WRAP_T value="CLAMP_TO_EDGE" />
+                </texture>
+                <texture name="front" UNIT="2" >
+                    <WRAP_S value="CLAMP_TO_EDGE" />
+                    <WRAP_T value="CLAMP_TO_EDGE" />
+                </texture>
+                <texture name="right" UNIT="3" >
+                    <WRAP_S value="CLAMP_TO_EDGE" />
+                    <WRAP_T value="CLAMP_TO_EDGE" />
+                </texture>
+                <texture name="top" UNIT="4" >
+                    <WRAP_S value="CLAMP_TO_EDGE" />
+                    <WRAP_T value="CLAMP_TO_EDGE" />
+                </texture>
+                <texture name="bottom" UNIT="5" >
+                    <WRAP_S value="CLAMP_TO_EDGE" />
+                    <WRAP_T value="CLAMP_TO_EDGE" />
+                </texture>
+                <texture name="CM" UNIT="6" >
+                    <WRAP_S value="CLAMP_TO_EDGE" />
+                    <WRAP_T value="CLAMP_TO_EDGE" />
+                </texture>
+            </textures>
+            <state name = "skybox" />
         </material>
     </materials>
 

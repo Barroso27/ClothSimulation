@@ -10,6 +10,11 @@
                 <file name="models/grid.obj" />
                 <TRANSLATE x="0" y="2" z="0" />
             </scene>
+            <scene name="SkyBox">
+                <geometry name="skyBox" material="skybox" type="BOX">
+                    <SCALE x="10" y="10" z="10" />
+                </geometry>
+            </scene>
         </scenes>
 
         <viewports>
@@ -37,6 +42,7 @@
             <materialLib filename="materials.mlib" />
         </materialLibs>
     </assets>
+
     <pipelines>
         <pipeline name="textures" default="true">
 
@@ -68,6 +74,17 @@
                 </materialMaps>
             </pass>
 
+            <pass class="default" name="PassoSkyBox">
+                <COLOR_CLEAR value="false" />
+                <DEPTH_CLEAR value="false" />
+                <scenes>
+                    <scene name="SkyBox"/>
+                </scenes>
+                <camera name="MainCamera" /> 
+                <materialMaps>
+                    <map fromMaterial="skybox" toMaterial="skybox" toLibrary="ClothMaterials"/>
+                </materialMaps>
+            </pass>
         </pipeline>
     </pipelines>
 
