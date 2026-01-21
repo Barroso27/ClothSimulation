@@ -18,9 +18,6 @@ void main() {
     vec3 trefrGreen = refract(ii, nn, eta + 0.01);
     vec3 trefrBlue = refract(ii, nn, eta + 0.02);
 
-    // vec3 refr = refract(ii, nn, eta);
-
-
     vec3 refl = texture(tex_cm, r).rgb;
     vec3 refr;
     
@@ -29,10 +26,6 @@ void main() {
     refr.b = texture(tex_cm, trefrBlue).b;
 
     float R = 1.0 - eta * eta * (1.0 - dot(nn, -ii) * dot(nn, -ii));
-    //vec3 c_refr = texture(tex_cm, refr).rgb;
-
-    // float f = 1 - pow(dot(-ii, nn), 2);
-    // vec3 c_final = mix(c_refr, c_refl, f);
 
     color = vec4(mix(refl, refr, R), 1); 
 }

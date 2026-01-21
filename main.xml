@@ -2,18 +2,39 @@
 <project name="Cloth Simulation Project" width="1920" height="1080">
 
     <assets>
+        <attributes>
+            <attribute type="COLOR" name="width" data="INT" value="25"/>
+            <attribute type="COLOR" name="height" data="INT" value="25"/>
+            <attribute type="COLOR" name="stiffness" data="FLOAT" value="100.0"/>
+            <attribute type="COLOR" name="stiffness2" data="FLOAT" value="0.0"/>
+            <attribute type="COLOR" name="damping_coeff" data="FLOAT" value="10.0"/>
+            <attribute type="COLOR" name="M" data="FLOAT" value="0.5"/>
+            <attribute type="COLOR" name="time_interval" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="wind_x" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="wind_y" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="wind_z" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="marbel_radius" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="wind_scale" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="sphere_x" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="sphere_y" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="sphere_z" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="sphere_radius" data="FLOAT" value="0.0"/>
+        </attributes>
         <scenes>
             <scene name="Sphere" param="UNITIZE">
-                <file name="models/sphere.obj" />
+                <file name="objects/sphere.obj" />
             </scene>
             <scene name="Grid" param="UNITIZE">
-                <file name="models/grid.obj" />
+                <file name="objects/grid.obj" />
                 <TRANSLATE x="0" y="2" z="0" />
             </scene>
             <scene name="SkyBox">
                 <geometry name="skyBox" material="skybox" type="BOX">
                     <SCALE x="10" y="10" z="10" />
                 </geometry>
+            </scene>
+            <scene name="Cloth" params="SWAP_XY">
+                <file name="objects/cloth.obj"/>
             </scene>
         </scenes>
 
@@ -34,7 +55,7 @@
 		
 		<lights>
 			<light name="Sun">
-				<DIRECTION x="2" y="-1" z="-2" />
+				<DIRECTION x="-5" y="-5" z="-5" />
 			</light>
 		</lights>      
 
@@ -44,8 +65,22 @@
     </assets>
 
     <pipelines>
-        <pipeline name="textures" default="true">
-
+        <pipeline name="cloth">
+            <pass class="compute" name="cloth_comp">
+                <material name="cloth_comp" fromLibrary="cloth" dimX="125" dimY="1" dimZ="1"/>
+            </pass>
+                  <pass name="cloth" class="default">
+                    <scenes>
+                      <scene name="Cloth"/>
+                    </scenes>
+                    <camera name="MainCamera"/>
+                    <lights>
+                      <light name="Sun"/>
+                    </lights>
+                    <materialMaps>
+                      <map fromMaterial="*" toMaterial="cloth" toLibrary="ClothMaterials"/>
+                    </materialMaps>
+                </pass>
             <pass class="default" name="PassoTerra">
                 <scenes>
                     <scene name="Grid"/>

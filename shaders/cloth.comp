@@ -1,0 +1,211 @@
+#version 430
+
+layout(local_size_x = 5, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 1) buffer clothBuffer {
+    vec4 pos[]; // 1D array of positions
+};
+
+layout(std430, binding = 2) buffer adjBuffer {
+    float adjacents[]; // 2D array of adjacents
+};
+
+layout(std430, binding = 3) buffer stuckVertBuffer {
+    float info[]; // 1D array of info
+};
+
+layout(std430, binding = 4) buffer normalsBuffer {
+    vec4 normals[]; // 1D array of normals
+};
+
+layout(std430, binding = 5) buffer textureBuffer {
+    vec2 text_coords[]; // 1D array of normals
+};
+
+layout(std430, binding = 6) buffer forcesBuffer {
+    vec4 forces[]; // 1D array of forces
+};
+
+layout(std430, binding = 7) buffer velocitiesBuffer {
+    vec4 vel[]; // 1D array of velocities
+};
+
+layout(std430, binding = 8) buffer adjBuffer2 {
+    float adjacents2[]; // 2D array of adjacents
+};
+
+uniform float wind_x;
+uniform float wind_y;
+uniform float wind_z;
+
+uniform float sphere_x;
+uniform float sphere_y;
+uniform float sphere_z;
+uniform float sphere_radius;
+
+uniform mat4 m_pvm;
+uniform float timer;
+uniform int width;
+uniform int height;
+uniform float stiffness;
+uniform float stiffness2;
+uniform float damping_coeff;
+uniform float M;
+uniform float time_interval;
+uniform sampler2D noise;
+uniform float marbel_radius;
+uniform float wind_scale;
+
+vec3 hookes_law(vec3 p1, vec3 p2, float stiffness, float edge_distance) {
+
+    vec3 v = p1 - p2; // vector from p1 to p2
+    float l = length(v); // length of the vector
+    vec3 vec_dir = normalize(v); // normalized vector from p1 to p2 (direction)
+    vec3 x = (l - edge_distance) * vec_dir; // difference between the current length and the resting edge distance
+    return -stiffness * x;
+}
+
+vec3 damping_force(vec3 p1, vec3 p2, vec4 vel1, vec4 vel2, float damping_coeff) {
+
+    vec3 vec = p1 - p2; // vector from p1 to p2
+    vec3 vel = vel1.xyz - vel2.xyz; // velocity difference
+    vec3 vec_dir = normalize(vec); // normalized vector from p1 to p2 (direction)
+    vec3 x = ((vel * vec) / length(vec)) * vec_dir; // difference between the current length and the resting edge distance
+    return -damping_coeff * x;
+}
+
+bool check_stuck(int index) {
+
+    int size = int(info[0]);
+
+    for (int i = 0; i < size; i++) {
+
+        if (index == int(info[1 + i])) {
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool is_adjacent(int index, int is_adj) {
+
+    int x = index % width;
+    int z = index / width;
+
+    for (int j = 0; j < 3; j++) {
+
+        for (int i = 0; i < 3; i++) {
+
+            if (adjacents[(index * 9) + i + j * 3] > 0 && x + i - 1 + ((z + j - 1) * width) == is_adj) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void main() {
+    int index = int(gl_GlobalInvocationID.x);
+
+    // Sphere information
+    vec3 sphereCenter = vec3(sphere_x, sphere_y, sphere_z);
+    float sphereRadius = sphere_radius;
+
+    vec3 force = vec3(0.0);
+    // vec3 norm = vec3(0.0);
+
+    force += vec3(0.0, -9.8, 0.0) * M;
+
+    int x = int(index) % width;
+    int z = int(index) / width;
+    bool found = false;
+
+    for (int j = 0; j < 3; j++) {
+
+        for (int i = 0; i < 3; i++) {
+
+            if (adjacents[(index * 9) + i + j * 3] > 0) {
+
+                // norm += normals[x + i - 1 + ((z + j - 1) * width)].xyz;
+                vec3 f = hookes_law(pos[index].xyz, pos[x + i - 1 + ((z + j - 1) * width)].xyz, stiffness, adjacents[(index * 9) + i + j * 3]) + damping_force(pos[index].xyz, pos[x + i - 1 + ((z + j - 1) * width)].xyz, vel[index], vel[x + i - 1 + ((z + j - 1) * width)], damping_coeff);
+                force += f;
+            }
+        }
+    }
+
+    if (adjacents2[index * 4] > 0) {
+
+        vec3 f = hookes_law(pos[index].xyz, pos[x - 2 + z * width].xyz, stiffness2, adjacents2[index * 4]);
+        force += f;
+    }
+
+    if (adjacents2[index * 4 + 1] > 0) {
+
+        vec3 f = hookes_law(pos[index].xyz, pos[x + 2 + z * width].xyz, stiffness2, adjacents2[index * 4 + 1]);
+        force += f;
+    }
+
+    if (adjacents2[index * 4 + 2] > 0) {
+
+        vec3 f = hookes_law(pos[index].xyz, pos[x + (z - 2) * width].xyz, stiffness2, adjacents2[index * 4 + 2]);
+        force += f;
+    }
+
+    if (adjacents2[index * 4 + 3] > 0) {
+
+        vec3 f = hookes_law(pos[index].xyz, pos[x + (z + 2) * width].xyz, stiffness2, adjacents2[index * 4 + 3]);
+        force += f;
+    }
+
+    if (length(vec3(wind_x, wind_y, wind_z)) != 0) {
+
+        float radius = 0.5;
+
+        float wind_intensity = length(texture(noise, vec2(text_coords[index].x + timer * 0.00001, text_coords[index].y + timer * 0.00001)));
+
+        float theta = texture(noise, vec2(text_coords[index].x + timer * 0.00001, text_coords[index].y + timer * 0.00001)).r * 2.0 * 3.14159265;
+        float phi = texture(noise, vec2(text_coords[index].x + timer * 0.00002, text_coords[index].y + timer * 0.00002)).r * 2.0 * 3.14159265;
+
+        float deviation_x = radius * sin(theta) * cos(phi);
+        float deviation_y = radius * sin(theta) * sin(phi);
+        float deviation_z = radius * cos(theta);
+        vec3 vector_deviation = vec3(deviation_x, deviation_y, deviation_z) * 0.5;
+
+        force += normalize(vec3(wind_x, wind_y, wind_z) + vector_deviation) * wind_intensity * wind_intensity * wind_intensity * wind_scale;
+    }
+
+    if (length(force) < 0.001 || check_stuck(index)) force = vec3(0.0);
+
+    vec3 a = force / M;
+    vec3 new_vel = vel[index].xyz + a * time_interval;
+    vec4 new_pos = pos[index] + vec4(new_vel * time_interval, 0.0);
+
+    for (int i = 0; i < height * width; i++) {
+
+        if (i != index && !is_adjacent(index, i) && length(new_pos.xyz - pos[i].xyz) < 2 * marbel_radius) {
+
+            vec3 n = normalize(new_pos.xyz - pos[i].xyz);
+            force = n * length(force) + force;
+            new_pos.xyz = pos[i].xyz + n * 2 * marbel_radius;
+            vec3 new_a = force / M;
+            new_vel = vel[index].xyz + new_a * time_interval;
+        }
+    }
+
+    if (length(new_pos.xyz - sphereCenter) < sphereRadius) {
+
+        vec3 n = normalize(new_pos.xyz - sphereCenter);
+        force = n * length(force) + force;
+        new_pos.xyz = sphereCenter + n * sphereRadius;
+        vec3 new_a = force / M;
+        new_vel = vel[index].xyz + new_a * time_interval;
+    }
+
+    forces[index] = vec4(force, length(force));
+    pos[index] = new_pos;
+    vel[index] = vec4(new_vel, 0.0);
+    normals[index] = normalize(normals[index]);
+}
