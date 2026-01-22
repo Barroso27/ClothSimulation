@@ -23,24 +23,11 @@ void main () {
 	texCoord = texCoord0;
 	n = normalize(m_normal * normal);
 	
-	// A esfera visual precisa coincidir com a esfera de colisão do cloth.comp
-	// Como a translação XML já posiciona a esfera em (5, -5, 5),
-	// e o cloth.comp calcula: animated_z = sphere_z + sin(timer * speed) * amplitude
-	// onde sphere_z = 5.0, o offset que precisamos adicionar é apenas sin(timer * speed) * amplitude
+	// Esfera estática - posição definida pelo TRANSLATE no XML
+	// Não aplicamos animação para coincidir com a esfera de colisão
 	
-	// Parâmetros da animação (devem coincidir com cloth.comp)
-	const float oscillation_speed = 0.0003;
-	const float oscillation_amplitude = 10.0; // Amplitude: vai de -10 a +10
-	
-	// Calcula o offset da animação (movimento perpendicular ao pano - eixo Z)
-	float offset_z = sin(timer * oscillation_speed) * oscillation_amplitude;
-	
-	// Aplica o offset à posição local (antes da transformação m_pvm que inclui a translação)
-	vec4 animated_position = position;
-	animated_position.z += offset_z;
-	
-	eye = -(m_viewModel * animated_position);
+	eye = -(m_viewModel * position);
 	ld = normalize(vec3(m_view * -l_dir));
 
-	gl_Position = m_pvm * animated_position;	
+	gl_Position = m_pvm * position;	
 }

@@ -119,32 +119,50 @@ bool is_adjacent(int index, int is_adj) {
 
 void main() {
     int index = int(gl_GlobalInvocationID.x);
+    int x = int(index) % width;
+    int z = int(index) / width;
 
     //  PONTAS FIXAS: Se for canto superior, não atualiza posição/velocidade
     if (is_top_corner(index)) {
         vel[index] = vec4(0.0);
         forces[index] = vec4(0.0);
+        
+        // Mas ainda calcula as normais para iluminação correta
+        vec3 currentPos = pos[index].xyz;
+        vec3 vertexNormal = vec3(0.0);
+        
+        bool hasLeft = (x > 0);
+        bool hasRight = (x < width - 1);
+        bool hasDown = (z < height - 1);
+        
+        vec3 left = hasLeft ? pos[index - 1].xyz : currentPos;
+        vec3 right = hasRight ? pos[index + 1].xyz : currentPos;
+        vec3 down = hasDown ? pos[index + width].xyz : currentPos;
+        
+        if (hasRight && hasDown) {
+            vertexNormal += cross(right - currentPos, down - currentPos);
+        }
+        if (hasDown && hasLeft) {
+            vertexNormal += cross(down - currentPos, left - currentPos);
+        }
+        
+        if (length(vertexNormal) > 0.001) {
+            normals[index] = vec4(normalize(vertexNormal), 0.0);
+        } else {
+            normals[index] = vec4(0.0, 1.0, 0.0, 0.0);
+        }
         return; // Sai cedo, não processa física
     }
 
-    // Sphere information - ANIMADA!
-    // A esfera oscila no eixo Z de z=10 até z=-10
-    const float oscillation_speed = 0.0003;  // Deve coincidir com earth.vert
-    const float oscillation_amplitude = 10.0; // Amplitude: vai de -10 a +10
-    
-    // sphere_z é o centro (0), então animated_z vai de -10 a +10
-    float animated_z = sphere_z + sin(timer * oscillation_speed) * oscillation_amplitude;
-    
-    vec3 sphereCenter = vec3(sphere_x, sphere_y, animated_z);
+
+    // Posição definida pelos uniforms sphere_x, sphere_y, sphere_z
+    vec3 sphereCenter = vec3(sphere_x, sphere_y, sphere_z);
     float sphereRadius = sphere_radius;
 
     vec3 force = vec3(0.0);
 
     // Gravidade
     force += vec3(0.0, -9.8, 0.0) * M;
-
-    int x = int(index) % width;
-    int z = int(index) / width;
 
     // Forças de mola dos vizinhos adjacentes
     for (int j = 0; j < 3; j++) {
@@ -240,5 +258,48 @@ void main() {
     forces[index] = vec4(force, length(force));
     pos[index] = new_pos;
     vel[index] = vec4(new_vel, 0.0);
-    normals[index] = normalize(normals[index]);
+    
+    // Calcula normal do vértice baseada nos vizinhos
+    vec3 vertexNormal = vec3(0.0);
+    vec3 currentPos = new_pos.xyz;
+    
+    // Vizinhos: esquerda, direita, cima, baixo
+    bool hasLeft = (x > 0);
+    bool hasRight = (x < width - 1);
+    bool hasUp = (z > 0);
+    bool hasDown = (z < height - 1);
+    
+    vec3 left = hasLeft ? pos[index - 1].xyz : currentPos;
+    vec3 right = hasRight ? pos[index + 1].xyz : currentPos;
+    vec3 up = hasUp ? pos[index - width].xyz : currentPos;
+    vec3 down = hasDown ? pos[index + width].xyz : currentPos;
+    
+    // Calcula normais das 4 faces adjacentes e faz média
+    if (hasLeft && hasUp) {
+        vec3 e1 = left - currentPos;
+        vec3 e2 = up - currentPos;
+        vertexNormal += cross(e1, e2);
+    }
+    if (hasUp && hasRight) {
+        vec3 e1 = up - currentPos;
+        vec3 e2 = right - currentPos;
+        vertexNormal += cross(e1, e2);
+    }
+    if (hasRight && hasDown) {
+        vec3 e1 = right - currentPos;
+        vec3 e2 = down - currentPos;
+        vertexNormal += cross(e1, e2);
+    }
+    if (hasDown && hasLeft) {
+        vec3 e1 = down - currentPos;
+        vec3 e2 = left - currentPos;
+        vertexNormal += cross(e1, e2);
+    }
+    
+    // Normaliza a normal final
+    if (length(vertexNormal) > 0.001) {
+        normals[index] = vec4(normalize(vertexNormal), 0.0);
+    } else {
+        normals[index] = vec4(0.0, 1.0, 0.0, 0.0); // Default up
+    }
 }

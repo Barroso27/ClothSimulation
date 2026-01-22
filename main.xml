@@ -17,14 +17,14 @@
             <attribute type="RENDERER" name="wind_scale" data="FLOAT" value="0.0"/>
             <attribute type="RENDERER" name="sphere_x" data="FLOAT" value="5.0"/>
             <attribute type="RENDERER" name="sphere_y" data="FLOAT" value="-5.0"/>
-            <attribute type="RENDERER" name="sphere_z" data="FLOAT" value="0.0"/>
-            <attribute type="RENDERER" name="sphere_radius" data="FLOAT" value="2.5"/>
+            <attribute type="RENDERER" name="sphere_z" data="FLOAT" value="5.0"/>
+            <attribute type="RENDERER" name="sphere_radius" data="FLOAT" value="2.52"/>
         </attributes>
         <scenes>
             <scene name="Sphere" param="UNITIZE">
                 <file name="objects/sphere.obj" />
                 <SCALE x="2.5" y="2.5" z="2.5" />
-                <TRANSLATE x="5.0" y="-5.0" z="0.0" />
+                <TRANSLATE x="5.0" y="-5.0" z="5.0" />
             </scene>
             
             <scene name="SkyBox">
@@ -56,7 +56,7 @@
 		
 		<lights>
 			<light name="Sun">
-				<DIRECTION x="0" y="-2" z="-3" />
+				<DIRECTION x="5" y="2" z="11" />
 			</light>
 		</lights>      
 
