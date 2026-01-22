@@ -111,16 +111,14 @@
                     <valueof uniform="timer" type="RENDERER" component="TIMER" />
                     <valueof uniform="width" type="COLOR" component="width" />
                     <valueof uniform="height" type="COLOR" component="height" />
-                    <valueof uniform="stiffness" type="COLOR" component="stiffness" />
-                    <valueof uniform="stiffness2" type="COLOR" component="stiffness2" />
-                    <valueof uniform="damping_coeff" type="COLOR" component="damping_coeff" />
-                    <valueof uniform="M" type="COLOR" component="M" />
+                    <valueof uniform="stiffness" type="RENDERER" component="stiffness" />
+                    <valueof uniform="stiffness2" type="RENDERER" component="stiffness2" />
+                    <valueof uniform="damping_coeff" type="RENDERER" component="damping_coeff" />
+                    <valueof uniform="M" type="RENDERER" component="M" />
                     <valueof uniform="time_interval" type="COLOR" component="time_interval" />
                     <valueof uniform="marbel_radius" type="RENDERER" component="marbel_radius" />
-                    <valueof uniform="sphere_x" type="RENDERER" component="sphere_x" />
-                    <valueof uniform="sphere_y" type="RENDERER" component="sphere_y" />
-                    <valueof uniform="sphere_z" type="RENDERER" component="sphere_z" />
-                    <valueof uniform="sphere_radius" type="RENDERER" component="sphere_radius" />
+                    <valueof uniform="sphere_pos" type="SCENE" context="Sphere" component="TRANSLATE" />
+                    <valueof uniform="sphere_scale" type="SCENE" context="Sphere" component="SCALE" />
                 </values>
             </shader>
             <buffers>

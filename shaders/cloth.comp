@@ -26,10 +26,10 @@ layout(std430, binding = 8) buffer adjBuffer2 {
     float adjacents2[];
 };
 
-uniform float sphere_x;
-uniform float sphere_y;
-uniform float sphere_z;
-uniform float sphere_radius;
+// Posição da esfera (xyz) controlada pela interface
+uniform vec4 sphere_pos;
+// Escala da esfera (usamos x como raio)
+uniform vec4 sphere_scale;
 
 uniform float timer;
 uniform int width;
@@ -131,9 +131,10 @@ void main() {
         return;
     }
 
-    // Posição da esfera
-    vec3 sphereCenter = vec3(sphere_x, sphere_y, sphere_z);
-    float sphereRadius = sphere_radius;
+    // Posição da esfera (lida do SCENE TRANSLATE via interface)
+    vec3 sphereCenter = sphere_pos.xyz;
+    // Raio de colisão = escala visual + pequena margem
+    float sphereRadius = sphere_scale.x + 0.02;
 
     vec3 force = vec3(0.0);
 
