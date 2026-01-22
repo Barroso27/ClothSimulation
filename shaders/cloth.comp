@@ -3,47 +3,34 @@
 layout(local_size_x = 5, local_size_y = 1, local_size_z = 1) in;
 
 layout(std430, binding = 1) buffer clothBuffer {
-    vec4 pos[]; // 1D array of positions
+    vec4 pos[];
 };
 
 layout(std430, binding = 2) buffer adjBuffer {
-    float adjacents[]; // 2D array of adjacents
-};
-
-layout(std430, binding = 3) buffer stuckVertBuffer {
-    float info[]; // 1D array of info
+    float adjacents[];
 };
 
 layout(std430, binding = 4) buffer normalsBuffer {
-    vec4 normals[]; // 1D array of normals
-};
-
-layout(std430, binding = 5) buffer textureBuffer {
-    vec2 text_coords[]; // 1D array of normals
+    vec4 normals[];
 };
 
 layout(std430, binding = 6) buffer forcesBuffer {
-    vec4 forces[]; // 1D array of forces
+    vec4 forces[];
 };
 
 layout(std430, binding = 7) buffer velocitiesBuffer {
-    vec4 vel[]; // 1D array of velocities
+    vec4 vel[];
 };
 
 layout(std430, binding = 8) buffer adjBuffer2 {
-    float adjacents2[]; // 2D array of adjacents
+    float adjacents2[];
 };
-
-uniform float wind_x;
-uniform float wind_y;
-uniform float wind_z;
 
 uniform float sphere_x;
 uniform float sphere_y;
 uniform float sphere_z;
 uniform float sphere_radius;
 
-uniform mat4 m_pvm;
 uniform float timer;
 uniform int width;
 uniform int height;
@@ -52,68 +39,42 @@ uniform float stiffness2;
 uniform float damping_coeff;
 uniform float M;
 uniform float time_interval;
-uniform sampler2D noise;
 uniform float marbel_radius;
-uniform float wind_scale;
 
 vec3 hookes_law(vec3 p1, vec3 p2, float stiffness, float edge_distance) {
-
-    vec3 v = p1 - p2; // vector from p1 to p2
-    float l = length(v); // length of the vector
-    vec3 vec_dir = normalize(v); // normalized vector from p1 to p2 (direction)
-    vec3 x = (l - edge_distance) * vec_dir; // difference between the current length and the resting edge distance
+    vec3 v = p1 - p2;
+    float l = length(v);
+    vec3 vec_dir = normalize(v);
+    vec3 x = (l - edge_distance) * vec_dir;
     return -stiffness * x;
 }
 
 vec3 damping_force(vec3 p1, vec3 p2, vec4 vel1, vec4 vel2, float damping_coeff) {
-
-    vec3 vec = p1 - p2; // vector from p1 to p2
-    vec3 vel = vel1.xyz - vel2.xyz; // velocity difference
-    vec3 vec_dir = normalize(vec); // normalized vector from p1 to p2 (direction)
-    vec3 x = ((vel * vec) / length(vec)) * vec_dir; // difference between the current length and the resting edge distance
+    vec3 vec = p1 - p2;
+    vec3 vel = vel1.xyz - vel2.xyz;
+    vec3 vec_dir = normalize(vec);
+    vec3 x = ((vel * vec) / length(vec)) * vec_dir;
     return -damping_coeff * x;
-}
-
-bool check_stuck(int index) {
-
-    int size = int(info[0]);
-
-    for (int i = 0; i < size; i++) {
-
-        if (index == int(info[1 + i])) {
-
-            return true;
-        }
-    }
-
-    return false;
 }
 
 // Verifica se o vértice está numa das pontas (cantos da primeira linha z=0)
 bool is_top_corner(int index) {
     int x = index % width;
     int z = index / width;
-    
-    // Fixa os dois cantos da linha z=0 (índices 0 e 24)
-    // O pano vai "pendurar" destes dois pontos
     return (z == 0) && (x == 0 || x == width - 1);
 }
 
 bool is_adjacent(int index, int is_adj) {
-
     int x = index % width;
     int z = index / width;
 
     for (int j = 0; j < 3; j++) {
-
         for (int i = 0; i < 3; i++) {
-
             if (adjacents[(index * 9) + i + j * 3] > 0 && x + i - 1 + ((z + j - 1) * width) == is_adj) {
                 return true;
             }
         }
     }
-
     return false;
 }
 
@@ -122,12 +83,28 @@ void main() {
     int x = int(index) % width;
     int z = int(index) / width;
 
-    //  PONTAS FIXAS: Se for canto superior, não atualiza posição/velocidade
+    // PONTAS FIXAS: Oscilam no eixo Z para criar movimento sobre a esfera
     if (is_top_corner(index)) {
         vel[index] = vec4(0.0);
         forces[index] = vec4(0.0);
         
-        // Mas ainda calcula as normais para iluminação correta
+        // Período de warm-up: pano fica parado para estabilizar antes de oscilar
+        float warmup_time = 5000.0; 
+        float effective_timer = max(0.0, timer - warmup_time);
+        
+        // Animação dos cantos - oscilam no eixo Z (só após warm-up)
+        float oscillation_amplitude = 8.0;
+        float oscillation_speed = 0.0003;
+        float offset_z = -sin(effective_timer * oscillation_speed) * oscillation_amplitude;
+        
+        // Posição base do canto (calculada a partir do índice)
+        float base_x = float(x) * (10.0 / float(width - 1));
+        float base_z = 0.0;
+        
+        // Atualiza posição com oscilação no eixo Z
+        pos[index] = vec4(base_x, 0.0, base_z + offset_z, 1.0);
+        
+        // Calcula as normais para iluminação correta
         vec3 currentPos = pos[index].xyz;
         vec3 vertexNormal = vec3(0.0);
         
@@ -151,11 +128,10 @@ void main() {
         } else {
             normals[index] = vec4(0.0, 1.0, 0.0, 0.0);
         }
-        return; // Sai cedo, não processa física
+        return;
     }
 
-
-    // Posição definida pelos uniforms sphere_x, sphere_y, sphere_z
+    // Posição da esfera
     vec3 sphereCenter = vec3(sphere_x, sphere_y, sphere_z);
     float sphereRadius = sphere_radius;
 
@@ -174,59 +150,36 @@ void main() {
         }
     }
 
-    // Forças de mola secundárias (diagonal longa)
+    // Forças de mola secundárias (bending)
     if (adjacents2[index * 4] > 0) {
         vec3 f = hookes_law(pos[index].xyz, pos[x - 2 + z * width].xyz, stiffness2, adjacents2[index * 4]);
         force += f;
     }
-
     if (adjacents2[index * 4 + 1] > 0) {
         vec3 f = hookes_law(pos[index].xyz, pos[x + 2 + z * width].xyz, stiffness2, adjacents2[index * 4 + 1]);
         force += f;
     }
-
     if (adjacents2[index * 4 + 2] > 0) {
         vec3 f = hookes_law(pos[index].xyz, pos[x + (z - 2) * width].xyz, stiffness2, adjacents2[index * 4 + 2]);
         force += f;
     }
-
     if (adjacents2[index * 4 + 3] > 0) {
         vec3 f = hookes_law(pos[index].xyz, pos[x + (z + 2) * width].xyz, stiffness2, adjacents2[index * 4 + 3]);
         force += f;
     }
 
-    // Vento com ruído
-    if (length(vec3(wind_x, wind_y, wind_z)) != 0) {
-
-        float radius = 0.5;
-
-        float wind_intensity = length(texture(noise, vec2(text_coords[index].x + timer * 0.00001, text_coords[index].y + timer * 0.00001)));
-
-        float theta = texture(noise, vec2(text_coords[index].x + timer * 0.00001, text_coords[index].y + timer * 0.00001)).r * 2.0 * 3.14159265;
-        float phi = texture(noise, vec2(text_coords[index].x + timer * 0.00002, text_coords[index].y + timer * 0.00002)).r * 2.0 * 3.14159265;
-
-        float deviation_x = radius * sin(theta) * cos(phi);
-        float deviation_y = radius * sin(theta) * sin(phi);
-        float deviation_z = radius * cos(theta);
-        vec3 vector_deviation = vec3(deviation_x, deviation_y, deviation_z) * 0.5;
-
-        force += normalize(vec3(wind_x, wind_y, wind_z) + vector_deviation) * wind_intensity * wind_intensity * wind_intensity * wind_scale;
-    }
-
-    // Check stuck vertices (do buffer)
-    if (length(force) < 0.001 || check_stuck(index)) force = vec3(0.0);
+    if (length(force) < 0.001) force = vec3(0.0);
 
     // Integração de Euler
     vec3 a = force / M;
     vec3 new_vel = vel[index].xyz + a * time_interval;
     vec4 new_pos = pos[index] + vec4(new_vel * time_interval, 0.0);
 
-    // Colisão entre vértices (marble radius)
+    // Colisão entre vértices (self-collision)
     for (int i = 0; i < height * width; i++) {
         if (i != index && !is_adjacent(index, i) && length(new_pos.xyz - pos[i].xyz) < 2 * marbel_radius) {
             vec3 n = normalize(new_pos.xyz - pos[i].xyz);
             new_pos.xyz = pos[i].xyz + n * 2 * marbel_radius;
-            // Ajusta velocidade
             float vel_along_n = dot(new_vel, n);
             if (vel_along_n < 0.0) {
                 new_vel -= vel_along_n * n * 1.2;
@@ -234,23 +187,15 @@ void main() {
         }
     }
 
-    //  COLISÃO COM ESFERA 
+    // Colisão com esfera
     if (sphereRadius > 0.01 && length(new_pos.xyz - sphereCenter) < sphereRadius) {
-        
         vec3 collision_normal = normalize(new_pos.xyz - sphereCenter);
-        
-        // Empurra para fora da esfera com pequena margem
         new_pos.xyz = sphereCenter + collision_normal * (sphereRadius + 0.01);
         
-        // Reflete/remove componente da velocidade que entra na esfera
         float vel_towards_sphere = dot(new_vel, collision_normal);
-        
         if (vel_towards_sphere < 0.0) {
-            // Remove componente que entra + adiciona bouncing
             new_vel -= vel_towards_sphere * collision_normal * 1.5;
         }
-        
-        // Fricção na superfície da esfera
         new_vel *= 0.85;
     }
 
@@ -259,11 +204,10 @@ void main() {
     pos[index] = new_pos;
     vel[index] = vec4(new_vel, 0.0);
     
-    // Calcula normal do vértice baseada nos vizinhos
+    // Calcula normal do vértice
     vec3 vertexNormal = vec3(0.0);
     vec3 currentPos = new_pos.xyz;
     
-    // Vizinhos: esquerda, direita, cima, baixo
     bool hasLeft = (x > 0);
     bool hasRight = (x < width - 1);
     bool hasUp = (z > 0);
@@ -274,32 +218,22 @@ void main() {
     vec3 up = hasUp ? pos[index - width].xyz : currentPos;
     vec3 down = hasDown ? pos[index + width].xyz : currentPos;
     
-    // Calcula normais das 4 faces adjacentes e faz média
     if (hasLeft && hasUp) {
-        vec3 e1 = left - currentPos;
-        vec3 e2 = up - currentPos;
-        vertexNormal += cross(e1, e2);
+        vertexNormal += cross(left - currentPos, up - currentPos);
     }
     if (hasUp && hasRight) {
-        vec3 e1 = up - currentPos;
-        vec3 e2 = right - currentPos;
-        vertexNormal += cross(e1, e2);
+        vertexNormal += cross(up - currentPos, right - currentPos);
     }
     if (hasRight && hasDown) {
-        vec3 e1 = right - currentPos;
-        vec3 e2 = down - currentPos;
-        vertexNormal += cross(e1, e2);
+        vertexNormal += cross(right - currentPos, down - currentPos);
     }
     if (hasDown && hasLeft) {
-        vec3 e1 = down - currentPos;
-        vec3 e2 = left - currentPos;
-        vertexNormal += cross(e1, e2);
+        vertexNormal += cross(down - currentPos, left - currentPos);
     }
     
-    // Normaliza a normal final
     if (length(vertexNormal) > 0.001) {
         normals[index] = vec4(normalize(vertexNormal), 0.0);
     } else {
-        normals[index] = vec4(0.0, 1.0, 0.0, 0.0); // Default up
+        normals[index] = vec4(0.0, 1.0, 0.0, 0.0);
     }
 }

@@ -10,28 +10,19 @@
             <attribute type="COLOR" name="damping_coeff" data="FLOAT" value="8.0"/>
             <attribute type="COLOR" name="M" data="FLOAT" value="0.1"/>
             <attribute type="COLOR" name="time_interval" data="FLOAT" value="0.001"/>
-            <attribute type="RENDERER" name="wind_x" data="FLOAT" value="0.0"/>
-            <attribute type="RENDERER" name="wind_y" data="FLOAT" value="0.0"/>
-            <attribute type="RENDERER" name="wind_z" data="FLOAT" value="0.0"/>
             <attribute type="RENDERER" name="marbel_radius" data="FLOAT" value="0.15"/>
-            <attribute type="RENDERER" name="wind_scale" data="FLOAT" value="0.0"/>
             <attribute type="RENDERER" name="sphere_x" data="FLOAT" value="5.0"/>
             <attribute type="RENDERER" name="sphere_y" data="FLOAT" value="-5.0"/>
-            <attribute type="RENDERER" name="sphere_z" data="FLOAT" value="5.0"/>
+            <attribute type="RENDERER" name="sphere_z" data="FLOAT" value="0.0"/>
             <attribute type="RENDERER" name="sphere_radius" data="FLOAT" value="2.52"/>
         </attributes>
         <scenes>
             <scene name="Sphere" param="UNITIZE">
                 <file name="objects/sphere.obj" />
                 <SCALE x="2.5" y="2.5" z="2.5" />
-                <TRANSLATE x="5.0" y="-5.0" z="5.0" />
+                <TRANSLATE x="5.0" y="-5.0" z="0.0" />
             </scene>
             
-            <scene name="SkyBox">
-                <geometry name="skyBox" material="skybox" type="BOX">
-                    <SCALE x="10" y="10" z="10" />
-                </geometry>
-            </scene>
             <scene name="Cloth">
                 <file name="objects/cloth.obj"/>
                 
@@ -40,15 +31,15 @@
 
         <viewports>
             <viewport name="MainViewport">
-                <CLEAR_COLOR r="0.0" g="0.0" b="0.0" />
+                <CLEAR_COLOR r="0.1" g="0.1" b="0.2" />
             </viewport>
         </viewports>
 
 		<cameras>
 			<camera name="MainCamera" >
 				<viewport name="MainViewport" />
-				<POSITION x="6" y="6" z="11" />
-				<VIEW x="-0.2" y="-0.6" z="-0.7" />
+				<POSITION x="20" y="1" z="-4" />
+				<VIEW x="-1" y="-0.4" z="0.25" />
                 <NEAR value="0.1" />
                 <FAR value="100000.0" />
 			</camera>

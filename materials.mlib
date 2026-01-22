@@ -5,20 +5,7 @@
         <texture name="earth" filename="materials/Earth/earthDay.jpg" mipmap="true" />
         <texture name="continents" filename="materials/Earth/earthSpec.jpg" mipmap="true" />
         <texture name="lights" filename="materials/Earth/earthLights.jpg" mipmap="true" />
-
         <texture name="albedo" filename="materials/Cloth/worn-blue-burlap-albedo.png" mipmap="true" />
-        <texture name="ao" filename="materials/Cloth/worn-blue-burlap-ao.png" mipmap="true" />
-        <texture name="height" filename="materials/Cloth/worn-blue-burlap-Height.png" mipmap="true" />
-        <texture name="metalic" filename="materials/Cloth/worn-blue-burlap-Metallic.png" mipmap="true" />
-        <texture name="normal" filename="materials/Cloth/worn-blue-burlap-Normal-dx.png" mipmap="true" />
-        <texture name="roughness" filename="materials/Cloth/worn-blue-burlap-Roughness.png" mipmap="true" />
-
-        <texture name="left" filename="materials/MilkyWay/nx.png" />
-        <texture name="right" filename="materials/MilkyWay/px.png" />
-        <texture name="front" filename="materials/MilkyWay/pz.png" />
-        <texture name="back" filename="materials/MilkyWay/nz.png" />
-        <texture name="top" filename="materials/MilkyWay/py.png" />
-        <texture name="bottom" filename="materials/MilkyWay/ny.png" />
     </textures>
 
     <shaders>
@@ -26,227 +13,144 @@
             <vs><file name="shaders/earth.vert" /></vs>
             <ps><file name="shaders/earth.frag" /><file name="shaders/noise.frag" /></ps>
         </shader>
-
-        <shader name="GridShader">
-            <vs><file name="shaders/grid.vert" /></vs>
-            <ps><file name="shaders/grid.frag" /></ps>
-        </shader>
-
-        <shader name="skyBox" vs="shaders/skybox.vert" ps="shaders/skybox.frag" />
-    
         <shader name="cloth" vs="shaders/cloth.vert" gs="shaders/cloth.geom" ps="shaders/cloth.frag" />
         <shader name="cloth_comp" cs="shaders/cloth.comp" />
-
-
     </shaders>
-	<buffers>
-		<buffer name="clothBuffer">
-			<DIM x="625" y="1" z="1" />
-			<file name="buffers/cloth_buffer_info.txt" />
-			<structure>
-				<field value="VEC4" />
-			</structure>
-		</buffer>
 
-		<buffer name="adjBuffer">
-			<DIM x="5625" y="1" z="1" />
-			<file name="buffers/cloth_adj_info.txt" />
-			<structure>
-				<field value="FLOAT" />
-			</structure>
-		</buffer>
+    <buffers>
+        <buffer name="clothBuffer">
+            <DIM x="625" y="1" z="1" />
+            <file name="buffers/cloth_buffer_info.txt" />
+            <structure>
+                <field value="VEC4" />
+            </structure>
+        </buffer>
 
-		<buffer name="stuckVertBuffer">
-			<DIM x="3" y="1" z="1" />
-			<file name="buffers/cloth_stuck_vert.txt" />
-			<structure>
-				<field value="FLOAT" />
-			</structure>
-		</buffer>
+        <buffer name="adjBuffer">
+            <DIM x="5625" y="1" z="1" />
+            <file name="buffers/cloth_adj_info.txt" />
+            <structure>
+                <field value="FLOAT" />
+            </structure>
+        </buffer>
 
-		<buffer name="normalsBuffer">
-			<DIM x="625" y="1" z="1" />
-			<file name="buffers/cloth_normals_info.txt" />
-			<structure>
-				<field value="VEC4" />
-			</structure>
-		</buffer>
+        <buffer name="normalsBuffer">
+            <DIM x="625" y="1" z="1" />
+            <file name="buffers/cloth_normals_info.txt" />
+            <structure>
+                <field value="VEC4" />
+            </structure>
+        </buffer>
 
-		<buffer name="textureBuffer">
-			<DIM x="625" y="1" z="1" />
-			<file name="buffers/cloth_texture_coords_info.txt" />
-			<structure>
-				<field value="VEC2" />
-			</structure>
-		</buffer>
-		
-		<buffer name="forcesBuffer">
-			<DIM x="625" y="1" z="1" />
-			<file name="buffers/cloth_forces_buffer.txt" />
-			<structure>
-				<field value="VEC4" />
-			</structure>
-		</buffer>
+        <buffer name="textureBuffer">
+            <DIM x="625" y="1" z="1" />
+            <file name="buffers/cloth_texture_coords_info.txt" />
+            <structure>
+                <field value="VEC2" />
+            </structure>
+        </buffer>
 
-		<buffer name="velocitiesBuffer">
-			<DIM x="625" y="1" z="1" />
-			<file name="buffers/cloth_velocities_buffer.txt" />
-			<structure>
-				<field value="VEC4" />
-			</structure>
-		</buffer>
+        <buffer name="forcesBuffer">
+            <DIM x="625" y="1" z="1" />
+            <file name="buffers/cloth_forces_buffer.txt" />
+            <structure>
+                <field value="VEC4" />
+            </structure>
+        </buffer>
 
-		<buffer name="adjBuffer2">
-			<DIM x="2500" y="1" z="1" />
-			<file name="buffers/cloth_adj_2_info.txt" />
-			<structure>
-				<field value="FLOAT" />
-			</structure>
-		</buffer>
-	</buffers>
+        <buffer name="velocitiesBuffer">
+            <DIM x="625" y="1" z="1" />
+            <file name="buffers/cloth_velocities_buffer.txt" />
+            <structure>
+                <field value="VEC4" />
+            </structure>
+        </buffer>
 
-    <states>
-        <state name="skybox">
-            <CULL_TYPE value="FRONT" />
-            <DEPTH_MASK value="false" />
-        </state>
-    </states>
+        <buffer name="adjBuffer2">
+            <DIM x="2500" y="1" z="1" />
+            <file name="buffers/cloth_adj_2_info.txt" />
+            <structure>
+                <field value="FLOAT" />
+            </structure>
+        </buffer>
+    </buffers>
 
     <materials>
-<material name="cloth">
-			<shader name="cloth">
-				<values>
-					<valueof uniform="timer" type="RENDERER" component="TIMER" />
-					<valueof uniform="l_dir" type="LIGHT" component="DIRECTION" id="0" />
-					<valueof uniform="m_pvm" type="RENDERER" component="PROJECTION_VIEW_MODEL" />
-					<valueof uniform="diffuse" type="COLOR" component="DIFFUSE" />
-					<valueof uniform="m_normal" type="RENDERER" component="NORMAL" />
-					<valueof uniform="m_view" type="RENDERER" component="VIEW" />
-					<valueof uniform="width" type="COLOR" component="width" />
-					<valueof uniform="height" type="COLOR" component="height" />
-					<valueof uniform="stiffness" type="COLOR" component="stiffness" />
-					<valueof uniform="stiffness2" type="COLOR" component="stiffness2" />
-					<valueof uniform="damping_coeff" type="COLOR" component="damping_coeff" />
-					<valueof uniform="M" type="COLOR" component="M" />
-					<valueof uniform="time_interval" type="COLOR" component="time_interval" />
-					<valueof uniform="wind_x" type="RENDERER" component="wind_x" />
-					<valueof uniform="wind_y" type="RENDERER" component="wind_y" />
-					<valueof uniform="wind_z" type="RENDERER" component="wind_z" />
-					<valueof uniform="wind_scale" type="RENDERER" component="wind_scale" context="CURRENT" />
-					<valueof uniform="marbel_radius" type="RENDERER" component="marbel_radius" />
-					<valueof uniform="sphere_x" type="RENDERER" component="sphere_x" />
-					<valueof uniform="sphere_y" type="RENDERER" component="sphere_y" />
-					<valueof uniform="sphere_z" type="RENDERER" component="sphere_z" />
-					<valueof uniform="sphere_radius" type="RENDERER" component="sphere_radius" />
-				</values>
-			</shader>
-			<textures>
-				<texture name="albedo" UNIT="0" />
-                <texture name="ao" UNIT="1" />
-                <texture name="metalic" UNIT="3" />
-                <texture name="normal" UNIT="4" />
-                <texture name="roughness" UNIT="5" />
-			</textures>
-			<buffers>
-				<buffer name="clothBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="1" />
-				</buffer>
-				<buffer name="adjBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="2" />
-				</buffer>
-				<buffer name="stuckVertBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="3" />
-				</buffer>
-				<buffer name="normalsBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="4" />
-				</buffer>
-				<buffer name="textureBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="5" />
-				</buffer>
-				<buffer name="forcesBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="6" />
-				</buffer>
-				<buffer name="velocitiesBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="7" />
-				</buffer>
-				<buffer name="adjBuffer2">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="8" />
-				</buffer>
-			</buffers>
-		</material>
-        
+        <material name="cloth">
+            <shader name="cloth">
+                <values>
+                    <valueof uniform="l_dir" type="LIGHT" component="DIRECTION" id="0" />
+                    <valueof uniform="m_pvm" type="RENDERER" component="PROJECTION_VIEW_MODEL" />
+                    <valueof uniform="diffuse" type="COLOR" component="DIFFUSE" />
+                    <valueof uniform="m_normal" type="RENDERER" component="NORMAL" />
+                    <valueof uniform="m_view" type="RENDERER" component="VIEW" />
+                </values>
+            </shader>
+            <textures>
+                <texture name="albedo" UNIT="0" />
+            </textures>
+            <buffers>
+                <buffer name="clothBuffer">
+                    <TYPE value="SHADER_STORAGE" />
+                    <BINDING_POINT value="1" />
+                </buffer>
+                <buffer name="normalsBuffer">
+                    <TYPE value="SHADER_STORAGE" />
+                    <BINDING_POINT value="4" />
+                </buffer>
+                <buffer name="textureBuffer">
+                    <TYPE value="SHADER_STORAGE" />
+                    <BINDING_POINT value="5" />
+                </buffer>
+            </buffers>
+        </material>
+
         <material name="cloth_comp">
-			<shader name="cloth_comp">
-				<values>
-					<valueof uniform="timer" type="RENDERER" component="TIMER" />
-					<valueof uniform="l_dir" type="LIGHT" component="DIRECTION" id="0" />
-					<valueof uniform="m_pvm" type="RENDERER" component="PROJECTION_VIEW_MODEL" />
-					<valueof uniform="diffuse" type="COLOR" component="DIFFUSE" />
-					<valueof uniform="m_normal" type="RENDERER" component="NORMAL" />
-					<valueof uniform="m_view" type="RENDERER" component="VIEW" />
-					<valueof uniform="width" type="COLOR" component="width" />
-					<valueof uniform="height" type="COLOR" component="height" />
-					<valueof uniform="stiffness" type="COLOR" component="stiffness" />
-					<valueof uniform="stiffness2" type="COLOR" component="stiffness2" />
-					<valueof uniform="damping_coeff" type="COLOR" component="damping_coeff" />
-					<valueof uniform="M" type="COLOR" component="M" />
-					<valueof uniform="time_interval" type="COLOR" component="time_interval" />
-					<valueof uniform="wind_x" type="RENDERER" component="wind_x" />
-					<valueof uniform="wind_y" type="RENDERER" component="wind_y" />
-					<valueof uniform="wind_z" type="RENDERER" component="wind_z" />
-					<valueof uniform="wind_scale" type="RENDERER" component="wind_scale" context="CURRENT" />
-					<valueof uniform="marbel_radius" type="RENDERER" component="marbel_radius" />
-					<valueof uniform="sphere_x" type="RENDERER" component="sphere_x" />
-					<valueof uniform="sphere_y" type="RENDERER" component="sphere_y" />
-					<valueof uniform="sphere_z" type="RENDERER" component="sphere_z" />
-					<valueof uniform="sphere_radius" type="RENDERER" component="sphere_radius" />
-				</values>
-			</shader>
-			<buffers>
-				<buffer name="clothBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="1" />
-				</buffer>
-				<buffer name="adjBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="2" />
-				</buffer>
-				<buffer name="stuckVertBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="3" />
-				</buffer>
-				<buffer name="normalsBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="4" />
-				</buffer>
-				<buffer name="textureBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="5" />
-				</buffer>
-				<buffer name="forcesBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="6" />
-				</buffer>
-				<buffer name="velocitiesBuffer">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="7" />
-				</buffer>
-				<buffer name="adjBuffer2">
-					<TYPE value="SHADER_STORAGE" />
-					<BINDING_POINT value="8" />
-				</buffer>
-			</buffers>
-		</material>
-        
-        
+            <shader name="cloth_comp">
+                <values>
+                    <valueof uniform="timer" type="RENDERER" component="TIMER" />
+                    <valueof uniform="width" type="COLOR" component="width" />
+                    <valueof uniform="height" type="COLOR" component="height" />
+                    <valueof uniform="stiffness" type="COLOR" component="stiffness" />
+                    <valueof uniform="stiffness2" type="COLOR" component="stiffness2" />
+                    <valueof uniform="damping_coeff" type="COLOR" component="damping_coeff" />
+                    <valueof uniform="M" type="COLOR" component="M" />
+                    <valueof uniform="time_interval" type="COLOR" component="time_interval" />
+                    <valueof uniform="marbel_radius" type="RENDERER" component="marbel_radius" />
+                    <valueof uniform="sphere_x" type="RENDERER" component="sphere_x" />
+                    <valueof uniform="sphere_y" type="RENDERER" component="sphere_y" />
+                    <valueof uniform="sphere_z" type="RENDERER" component="sphere_z" />
+                    <valueof uniform="sphere_radius" type="RENDERER" component="sphere_radius" />
+                </values>
+            </shader>
+            <buffers>
+                <buffer name="clothBuffer">
+                    <TYPE value="SHADER_STORAGE" />
+                    <BINDING_POINT value="1" />
+                </buffer>
+                <buffer name="adjBuffer">
+                    <TYPE value="SHADER_STORAGE" />
+                    <BINDING_POINT value="2" />
+                </buffer>
+                <buffer name="normalsBuffer">
+                    <TYPE value="SHADER_STORAGE" />
+                    <BINDING_POINT value="4" />
+                </buffer>
+                <buffer name="forcesBuffer">
+                    <TYPE value="SHADER_STORAGE" />
+                    <BINDING_POINT value="6" />
+                </buffer>
+                <buffer name="velocitiesBuffer">
+                    <TYPE value="SHADER_STORAGE" />
+                    <BINDING_POINT value="7" />
+                </buffer>
+                <buffer name="adjBuffer2">
+                    <TYPE value="SHADER_STORAGE" />
+                    <BINDING_POINT value="8" />
+                </buffer>
+            </buffers>
+        </material>
+
         <material name="MatEarth">
             <shader name="EarthShader">
                 <values>
@@ -266,53 +170,6 @@
                 <texture name="continents" UNIT="1" />
                 <texture name="lights" UNIT="2" />
             </textures>
-        </material>
-
-        <material name="MatGrid">
-            <shader name="GridShader">
-                <values>
-                    <valueof uniform="m_pvm" type="RENDERER" component="PROJECTION_VIEW_MODEL" />
-                    <valueof uniform="m_normal" type="RENDERER" component="NORMAL" />
-                    <valueof uniform="m_viewModel" type="RENDERER" component="VIEW_MODEL" />
-                    <valueof uniform="l_dir" type="LIGHT" component="DIRECTION" id="0"/>
-                    <valueof uniform="texAlbedo" type="TEXTURE_BINDING" component="UNIT" id="0" />
-                    <valueof uniform="texAo" type="TEXTURE_BINDING" component="UNIT" id="1" />
-                    <valueof uniform="texMetalic" type="TEXTURE_BINDING" component="UNIT" id="3" />
-                    <valueof uniform="texNormal" type="TEXTURE_BINDING" component="UNIT" id="4" />
-                    <valueof uniform="texRoughness" type="TEXTURE_BINDING" component="UNIT" id="5" />
-                </values>
-            </shader>
-            <textures>
-                <texture name="albedo" UNIT="0" />
-                <texture name="ao" UNIT="1" />
-                <texture name="metalic" UNIT="3" />
-                <texture name="normal" UNIT="4" />
-                <texture name="roughness" UNIT="5" />
-            </textures>
-        </material>
-
-        <material name="skybox">
-            <shader name="skyBox">
-                <values>
-                    <valueof uniform="m_pvm" type="RENDERER" component="PROJECTION_VIEW_MODEL" />
-                    <valueof uniform="cam_pos" type="CAMERA" component="POSITION" />
-                    <valueof uniform="tex_back" type="TEXTURE_BINDING" component="UNIT" id="0" />
-                    <valueof uniform="tex_left" type="TEXTURE_BINDING" component="UNIT" id="1" />
-                    <valueof uniform="tex_front" type="TEXTURE_BINDING" component="UNIT" id="2" />
-                    <valueof uniform="tex_right" type="TEXTURE_BINDING" component="UNIT" id="3" />
-                    <valueof uniform="tex_top" type="TEXTURE_BINDING" component="UNIT" id="4" />
-                    <valueof uniform="tex_bottom" type="TEXTURE_BINDING" component="UNIT" id="5" />
-                </values>
-            </shader>
-            <textures>
-                <texture name="back" UNIT="0"><WRAP_S value="CLAMP_TO_EDGE" /><WRAP_T value="CLAMP_TO_EDGE" /></texture>
-                <texture name="left" UNIT="1"><WRAP_S value="CLAMP_TO_EDGE" /><WRAP_T value="CLAMP_TO_EDGE" /></texture>
-                <texture name="front" UNIT="2"><WRAP_S value="CLAMP_TO_EDGE" /><WRAP_T value="CLAMP_TO_EDGE" /></texture>
-                <texture name="right" UNIT="3"><WRAP_S value="CLAMP_TO_EDGE" /><WRAP_T value="CLAMP_TO_EDGE" /></texture>
-                <texture name="top" UNIT="4"><WRAP_S value="CLAMP_TO_EDGE" /><WRAP_T value="CLAMP_TO_EDGE" /></texture>
-                <texture name="bottom" UNIT="5"><WRAP_S value="CLAMP_TO_EDGE" /><WRAP_T value="CLAMP_TO_EDGE" /></texture>
-            </textures>
-            <state name="skybox" />
         </material>
     </materials>
 </materialLib>
