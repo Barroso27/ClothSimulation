@@ -5,25 +5,26 @@
         <attributes>
             <attribute type="COLOR" name="width" data="INT" value="25"/>
             <attribute type="COLOR" name="height" data="INT" value="25"/>
-            <attribute type="COLOR" name="stiffness" data="FLOAT" value="100.0"/>
-            <attribute type="COLOR" name="stiffness2" data="FLOAT" value="0.0"/>
-            <attribute type="COLOR" name="damping_coeff" data="FLOAT" value="10.0"/>
-            <attribute type="COLOR" name="M" data="FLOAT" value="0.5"/>
-            <attribute type="COLOR" name="time_interval" data="FLOAT" value="0.0"/>
+            <attribute type="COLOR" name="stiffness" data="FLOAT" value="800.0"/>
+            <attribute type="COLOR" name="stiffness2" data="FLOAT" value="400.0"/>
+            <attribute type="COLOR" name="damping_coeff" data="FLOAT" value="8.0"/>
+            <attribute type="COLOR" name="M" data="FLOAT" value="0.1"/>
+            <attribute type="COLOR" name="time_interval" data="FLOAT" value="0.001"/>
             <attribute type="RENDERER" name="wind_x" data="FLOAT" value="0.0"/>
             <attribute type="RENDERER" name="wind_y" data="FLOAT" value="0.0"/>
             <attribute type="RENDERER" name="wind_z" data="FLOAT" value="0.0"/>
-            <attribute type="RENDERER" name="marbel_radius" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="marbel_radius" data="FLOAT" value="0.15"/>
             <attribute type="RENDERER" name="wind_scale" data="FLOAT" value="0.0"/>
-            <attribute type="RENDERER" name="sphere_x" data="FLOAT" value="0.0"/>
-            <attribute type="RENDERER" name="sphere_y" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="sphere_x" data="FLOAT" value="5.0"/>
+            <attribute type="RENDERER" name="sphere_y" data="FLOAT" value="-5.0"/>
             <attribute type="RENDERER" name="sphere_z" data="FLOAT" value="0.0"/>
-            <attribute type="RENDERER" name="sphere_radius" data="FLOAT" value="0.0"/>
+            <attribute type="RENDERER" name="sphere_radius" data="FLOAT" value="2.5"/>
         </attributes>
         <scenes>
             <scene name="Sphere" param="UNITIZE">
                 <file name="objects/sphere.obj" />
-                <TRANSLATE x="2" y="0" z="2" />
+                <SCALE x="2.5" y="2.5" z="2.5" />
+                <TRANSLATE x="5.0" y="-5.0" z="0.0" />
             </scene>
             
             <scene name="SkyBox">
@@ -31,9 +32,9 @@
                     <SCALE x="10" y="10" z="10" />
                 </geometry>
             </scene>
-            <scene name="Cloth" params="SWAP_XY">
+            <scene name="Cloth">
                 <file name="objects/cloth.obj"/>
-                <TRANSLATE x="0" y="2" z="0" />
+                
             </scene>
         </scenes>
 
@@ -81,7 +82,7 @@
                       <map fromMaterial="*" toMaterial="cloth" toLibrary="ClothMaterials"/>
                     </materialMaps>
                 </pass>
-            <pass class="default" name="PassoGrid">
+            <pass class="default" name="PassoSphere">
                 <COLOR_CLEAR value="false" />
                 <DEPTH_CLEAR value="false" />
                 <scenes>
@@ -93,18 +94,6 @@
                 </lights>
                 <materialMaps>
                     <map fromMaterial="*" toMaterial="MatEarth" toLibrary="ClothMaterials"/>
-                </materialMaps>
-            </pass>
-
-            <pass class="default" name="PassoSkyBox">
-                <COLOR_CLEAR value="false" />
-                <DEPTH_CLEAR value="false" />
-                <scenes>
-                    <scene name="SkyBox"/>
-                </scenes>
-                <camera name="MainCamera" /> 
-                <materialMaps>
-                    <map fromMaterial="skybox" toMaterial="skybox" toLibrary="ClothMaterials"/>
                 </materialMaps>
             </pass>
         </pipeline>

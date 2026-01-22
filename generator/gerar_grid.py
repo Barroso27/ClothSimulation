@@ -212,11 +212,11 @@ class ClothGenerator:
 if __name__ == "__main__":
     divisions_h = 25
     divisions_v = 25
-    height = 5.0
-    width = 5.0
+    height = 10.0
+    width = 10.0
     
-    # Prender a primeira linha (índices 0 a 24)
-    stuck_verts = [i for i in range(divisions_h)] 
+    # Prender os cantos da primeira linha (índices 0 e 24)
+    stuck_verts = [0, divisions_h - 1]
     
     generator = ClothGenerator(height, width, divisions_h, divisions_v, stuck_verts)
     generator.run()

@@ -89,6 +89,16 @@ bool check_stuck(int index) {
     return false;
 }
 
+// Verifica se o vértice está numa das pontas (cantos da primeira linha z=0)
+bool is_top_corner(int index) {
+    int x = index % width;
+    int z = index / width;
+    
+    // Fixa os dois cantos da linha z=0 (índices 0 e 24)
+    // O pano vai "pendurar" destes dois pontos
+    return (z == 0) && (x == 0 || x == width - 1);
+}
+
 bool is_adjacent(int index, int is_adj) {
 
     int x = index % width;
@@ -110,56 +120,64 @@ bool is_adjacent(int index, int is_adj) {
 void main() {
     int index = int(gl_GlobalInvocationID.x);
 
-    // Sphere information
-    vec3 sphereCenter = vec3(sphere_x, sphere_y, sphere_z);
+    //  PONTAS FIXAS: Se for canto superior, não atualiza posição/velocidade
+    if (is_top_corner(index)) {
+        vel[index] = vec4(0.0);
+        forces[index] = vec4(0.0);
+        return; // Sai cedo, não processa física
+    }
+
+    // Sphere information - ANIMADA!
+    // A esfera oscila no eixo Z de z=10 até z=-10
+    const float oscillation_speed = 0.0003;  // Deve coincidir com earth.vert
+    const float oscillation_amplitude = 10.0; // Amplitude: vai de -10 a +10
+    
+    // sphere_z é o centro (0), então animated_z vai de -10 a +10
+    float animated_z = sphere_z + sin(timer * oscillation_speed) * oscillation_amplitude;
+    
+    vec3 sphereCenter = vec3(sphere_x, sphere_y, animated_z);
     float sphereRadius = sphere_radius;
 
     vec3 force = vec3(0.0);
-    // vec3 norm = vec3(0.0);
 
+    // Gravidade
     force += vec3(0.0, -9.8, 0.0) * M;
 
     int x = int(index) % width;
     int z = int(index) / width;
-    bool found = false;
 
+    // Forças de mola dos vizinhos adjacentes
     for (int j = 0; j < 3; j++) {
-
         for (int i = 0; i < 3; i++) {
-
             if (adjacents[(index * 9) + i + j * 3] > 0) {
-
-                // norm += normals[x + i - 1 + ((z + j - 1) * width)].xyz;
                 vec3 f = hookes_law(pos[index].xyz, pos[x + i - 1 + ((z + j - 1) * width)].xyz, stiffness, adjacents[(index * 9) + i + j * 3]) + damping_force(pos[index].xyz, pos[x + i - 1 + ((z + j - 1) * width)].xyz, vel[index], vel[x + i - 1 + ((z + j - 1) * width)], damping_coeff);
                 force += f;
             }
         }
     }
 
+    // Forças de mola secundárias (diagonal longa)
     if (adjacents2[index * 4] > 0) {
-
         vec3 f = hookes_law(pos[index].xyz, pos[x - 2 + z * width].xyz, stiffness2, adjacents2[index * 4]);
         force += f;
     }
 
     if (adjacents2[index * 4 + 1] > 0) {
-
         vec3 f = hookes_law(pos[index].xyz, pos[x + 2 + z * width].xyz, stiffness2, adjacents2[index * 4 + 1]);
         force += f;
     }
 
     if (adjacents2[index * 4 + 2] > 0) {
-
         vec3 f = hookes_law(pos[index].xyz, pos[x + (z - 2) * width].xyz, stiffness2, adjacents2[index * 4 + 2]);
         force += f;
     }
 
     if (adjacents2[index * 4 + 3] > 0) {
-
         vec3 f = hookes_law(pos[index].xyz, pos[x + (z + 2) * width].xyz, stiffness2, adjacents2[index * 4 + 3]);
         force += f;
     }
 
+    // Vento com ruído
     if (length(vec3(wind_x, wind_y, wind_z)) != 0) {
 
         float radius = 0.5;
@@ -177,33 +195,48 @@ void main() {
         force += normalize(vec3(wind_x, wind_y, wind_z) + vector_deviation) * wind_intensity * wind_intensity * wind_intensity * wind_scale;
     }
 
+    // Check stuck vertices (do buffer)
     if (length(force) < 0.001 || check_stuck(index)) force = vec3(0.0);
 
+    // Integração de Euler
     vec3 a = force / M;
     vec3 new_vel = vel[index].xyz + a * time_interval;
     vec4 new_pos = pos[index] + vec4(new_vel * time_interval, 0.0);
 
+    // Colisão entre vértices (marble radius)
     for (int i = 0; i < height * width; i++) {
-
         if (i != index && !is_adjacent(index, i) && length(new_pos.xyz - pos[i].xyz) < 2 * marbel_radius) {
-
             vec3 n = normalize(new_pos.xyz - pos[i].xyz);
-            force = n * length(force) + force;
             new_pos.xyz = pos[i].xyz + n * 2 * marbel_radius;
-            vec3 new_a = force / M;
-            new_vel = vel[index].xyz + new_a * time_interval;
+            // Ajusta velocidade
+            float vel_along_n = dot(new_vel, n);
+            if (vel_along_n < 0.0) {
+                new_vel -= vel_along_n * n * 1.2;
+            }
         }
     }
 
-    if (length(new_pos.xyz - sphereCenter) < sphereRadius) {
-
-        vec3 n = normalize(new_pos.xyz - sphereCenter);
-        force = n * length(force) + force;
-        new_pos.xyz = sphereCenter + n * sphereRadius;
-        vec3 new_a = force / M;
-        new_vel = vel[index].xyz + new_a * time_interval;
+    //  COLISÃO COM ESFERA 
+    if (sphereRadius > 0.01 && length(new_pos.xyz - sphereCenter) < sphereRadius) {
+        
+        vec3 collision_normal = normalize(new_pos.xyz - sphereCenter);
+        
+        // Empurra para fora da esfera com pequena margem
+        new_pos.xyz = sphereCenter + collision_normal * (sphereRadius + 0.01);
+        
+        // Reflete/remove componente da velocidade que entra na esfera
+        float vel_towards_sphere = dot(new_vel, collision_normal);
+        
+        if (vel_towards_sphere < 0.0) {
+            // Remove componente que entra + adiciona bouncing
+            new_vel -= vel_towards_sphere * collision_normal * 1.5;
+        }
+        
+        // Fricção na superfície da esfera
+        new_vel *= 0.85;
     }
 
+    // Atualiza buffers
     forces[index] = vec4(force, length(force));
     pos[index] = new_pos;
     vel[index] = vec4(new_vel, 0.0);
