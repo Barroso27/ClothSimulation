@@ -1,0 +1,522 @@
+\documentclass[11pt,a4paper]{report}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[portuguese]{babel}
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{enumerate}
+\usepackage{color}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage[pdftex]{hyperref}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage[]{listings}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}
+  {}
+  {0pt}
+  {\Huge}
+\titlespacing*{\chapter}
+  {0pt}    % indentação à esquerda
+  {-30pt}  % espaço ANTES do título (empurre para cima)
+  {20pt}   % espaço DEPOIS do título
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\usepackage{titlesec}
+
+\titleformat{\chapter}
+  {\normalfont\huge\bfseries\raggedright}
+  {\thechapter}{1em}{}
+
+
+\usepackage{listings} % para por codigo
+\usepackage{float}
+\usepackage{indentfirst}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{magenta},
+    keywordstyle=\color{codegreen},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    keepspaces=true,
+    numbers=left,
+    numbersep=2pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=true
+}
+
+\lstset{style=mystyle}
+
+\graphicspath{{../../imagens/TP2/}}
+
+\title{Cloth Simulation\\[0.3cm]
+\Large Visualização em Tempo Real}
+
+\author{
+    Grupo 6 \\
+    Gonçalo Gonçalves Barroso - PG58980 \\
+    Maria Inês Matos - PG61533 \\
+} 
+
+
+\date{\today} %data
+
+\begin{document}
+
+    \begin{minipage}{0.9\linewidth}
+        \centering
+        \includegraphics[width=0.4\textwidth]{um.jpg}\par\vspace{1 cm}
+        \href{https://www.uminho.pt/PT}
+        {\scshape\LARGE Universidade do Minho} \par
+        \vspace{0.6cm}
+        \href{https://web.di.uminho.pt/sitedi/meinf/}
+        {\scshape\Large Mestrado em Engenharia Informática} \par
+        \maketitle
+        
+    \end{minipage}
+
+    \tableofcontents
+
+    \pagebreak
+
+    \chapter{Introdução}
+
+    No âmbito da unidade curricular de Visualização em Tempo Real, escolhemos como tema Cloth Simulation, que simula o comportamento de tecidos, permitindo representar de forma realista a sua deformação e movimento sob a ação de forças externas, como a gravidade, bem como a interação com objetos do ambiente.
+
+    Neste relatório, focamo-nos no estudo de um algoritmo específico de Cloth Simulation, descrevendo o seu funcionamento e justificando as opções por nós adotadas. Adicionalmente analisamos as vantagens e limitações desta abordagem.
+
+    
+    \chapter{Escolha do algoritmo}
+    Após a análise de diferentes abordagens existentes, optámos pela utilização do \textbf{\textit{Mass-Spring Model}} para a implementação de \textit{Cloth Simulation} neste trabalho. Esta escolha deve-se principalmente ao equilíbrio que este modelo oferece entre simplicidade de implementação, desempenho computacional e qualidade visual.
+
+    \section{Funcionamento do Mass-Spring Model}
+    No \textit{Mass-Spring Model}, o pano é representado como uma grid regular de partículas (\textit{mass points}), onde cada partícula possui propriedades físicas como posição, velocidade e massa. As partículas são interligadas por springs (molas), que modelam as forças elásticas responsáveis por manter a estrutura do tecido.
+
+    O comportamento de cada \textit{spring} é descrito pela Lei de Hooke, que define a força exercida por uma mola em função da sua deformação relativamente ao comprimento de repouso. De forma simplificada, esta lei afirma que a força aplicada por uma \textit{spring} é proporcional à diferença entre o comprimento atual da mola e o seu comprimento de repouso, atuando no sentido oposto à deformação. Esta relação pode ser expressa como:
+
+    \begin{equation}
+    \vec{F} = -k \, (l - l_0) \, \hat{d}
+    \end{equation}
+    
+    onde $k$ representa a \textit{stiffness} da \textit{spring}, $l$ o comprimento actual, $l_0$ o comprimento de repouso e $\hat{d}$ a direção da força. Esta força faz com que as partículas tendam a regressar à sua posição de equilíbrio sempre que o pano é esticado ou comprimido.
+
+    \begin{figure}[h]
+    \centering
+    \includegraphics[width=0.6\textwidth]{hooke_spring.png}
+    \caption{Representação da Lei de Hooke aplicada a uma spring entre duas partículas.}
+    \label{fig:hooke}
+    \end{figure}
+
+    Para além da força elástica, é normalmente introduzido um termo de amortecimento (\textit{damping}), proporcional à velocidade relativa entre partículas ligadas pela mesma \textit{spring}. Este termo tem como objetivo reduzir oscilações excessivas e dissipar energia, contribuindo para a estabilidade da simulação.
+    
+    As ligações entre partículas não são todas iguais. De forma a simular de forma mais realista o comportamento do tecido, são utilizados diferentes tipos de \textit{springs}, cada um com uma função específica na malha:
+
+    \begin{itemize}
+    \item \textbf{Structural Springs}: ligam partículas adjacentes na horizontal e vertical da \textit{grid}. Estas ligações são responsáveis por manter a forma base do pano e resistir a estiramentos excessivos.
+    \item \textbf{Shear Springs}: ligam partículas na diagonal. Estas \textit{springs} ajudam a preservar a área da malha e evitam deformações irrealistas em forma de losango.
+    \item \textbf{Bending Springs}: ligam partículas não adjacentes, normalmente separadas por uma partícula intermédia. Estas ligações permitem controlar a flexão do pano, evitando dobras demasiado abruptas e conferindo maior suavidade visual à simulação.
+    \end{itemize}
+    
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=10cm]{Mass-Spring Model.png}
+    \caption{Mass-Spring system for cloth simulation}
+    \end{figure}
+
+    As partículas do sistema estão ainda sujeitas a forças externas, como a gravidade, que provocam o movimento global e as deformações naturais do pano. A soma de todas as forças internas (\textit{springs} e \textit{damping}) e externas resulta na força total aplicada a cada partícula.
+
+    A evolução do sistema ao longo do tempo é calculada recorrendo a um método de \textit{numerical integration}, que permite actualizar a velocidade e a posição das partículas em cada passo temporal. Este processo é repetido iterativamente, originando o movimento contínuo e deformável do pano.
+
+    \section{Vantagens do Mass-Spring Model}
+    Uma das principais vantagens do \textit{Mass-Spring Model} é a sua simplicidade conceptual. O modelo é intuitivo e permite compreender facilmente a relação entre forças, movimento e deformação.
+
+    Do ponto de vista do desempenho, trata-se de um modelo computacionalmente eficiente, especialmente quando comparado com abordagens mais complexas, como os \textit{Finite Element Methods} (FEM).
+    
+    Outra vantagem relevante é a sua flexibilidade pois através do ajuste dos parâmetros das \textit{springs}, como \textit{stiffness} e \textit{damping}, é possível simular diferentes tipos de tecidos.
+
+    \section{Limitações do \textit{Mass-Spring Model}}
+
+    Apesar das suas vantagens, o \textit{Mass-Spring Model} apresenta algumas limitações. Uma delas é a forte dependência da calibração dos parâmetros, sendo necessário ajustar cuidadosamente os valores de \textit{stiffness} e \textit{damping} para evitar comportamentos instáveis ou pouco realistas.
+
+    Além disso, este modelo constitui uma aproximação discreta do comportamento físico do tecido, não garantindo uma simulação fisicamente exata. Em situações que exigem elevado rigor físico, como simulações científicas ou industriais, métodos mais avançados podem ser mais adequados.
+    
+    \chapter{Implementação}
+    Este capítulo descreve a implementação prática do algoritmo de Cloth Simulation baseado no \textit{Mass-Spring Model} explicado anteriormente. A simulação foi desenvolvida recorrendo maioritariamente a \textit{compute shaders}, permitindo paralelizar o cálculo das forças e a integração do movimento diretamente na GPU, garantindo melhor desempenho e escalabilidade.
+
+    \section{Tecnologias Utilizadas}
+    A implementação recorre às seguintes tecnologias:
+    \begin{itemize}
+        \item \textbf{NAU3D Engine} -- Motor gráfico académico baseado em OpenGL
+        \item \textbf{GLSL 4.30} -- Linguagem de shaders para programação na GPU
+        \item \textbf{OpenGL Compute Shaders} -- Para cálculos de física paralelos
+        \item \textbf{ImGui} -- Interface gráfica para controlo em tempo real
+        \item \textbf{XML} -- Configuração do projeto e materiais
+    \end{itemize}
+
+    \section{Justificação Arquitetural (Engenharia de Software)}
+    As decisões arquiteturais da implementação foram guiadas por princípios de engenharia de software, visando modularidade, desempenho e manutenibilidade.
+    
+    \subsection{Separação Compute/Render}
+    A arquitetura segue o princípio de \textbf{separação de responsabilidades}, dividindo claramente a lógica de simulação física (compute pass) da renderização visual (render pass). Esta separação permite:
+    \begin{itemize}
+        \item Modificar a física sem alterar o código de renderização e vice-versa
+        \item Testar e otimizar cada componente independentemente
+        \item Reutilizar os shaders de renderização com diferentes simulações
+    \end{itemize}
+    
+    \subsection{Utilização de Shader Storage Buffer Objects (SSBO)}
+    A escolha de \textit{SSBOs} (OpenGL 4.3) em vez de texturas ou \textit{Uniform Buffer Objects} justifica-se por:
+    \begin{itemize}
+        \item \textbf{Leitura e escrita}: SSBOs permitem operações de read/write no mesmo buffer, essencial para atualizar posições e velocidades in-place
+        \item \textbf{Tamanho flexível}: Suportam arrays de tamanho dinâmico, adequado para malhas de diferentes resoluções
+        \item \textbf{Partilha entre shaders}: O mesmo buffer é acedido pelo compute shader (física) e pelos shaders de renderização, evitando cópias de memória
+    \end{itemize}
+    
+    \subsection{Trade-offs de Desempenho}
+    \begin{itemize}
+        \item \textbf{Resolução da malha ($25 \times 25$)}: Compromisso entre detalhe visual e número de cálculos por frame. Com 625 vértices, cada um verificando até 81 vizinhos para colisões, o sistema mantém-se responsivo.
+        \item \textbf{Work group size (5×1×1)}: Dimensionado para garantir ocupação eficiente da GPU sem exceder limites de memória partilhada.
+    \end{itemize}
+
+    \section{Estrutura da Malha}
+    O tecido é representado como uma malha regular de $25 \times 25$ vértices, totalizando 625 partículas. Cada partícula é processada em paralelo na GPU através de \textit{compute shaders}.
+    
+    A malha é gerada através de um script Python (\texttt{gerar\_grid.py}) que produz:
+    \begin{itemize}
+        \item Ficheiro OBJ com a geometria da malha
+        \item Buffers de posições, velocidades, normais e forças
+        \item Buffers de adjacências para as \textit{Structural}, \textit{Shear} e \textit{Bending Springs}
+    \end{itemize}
+
+    \section{Parâmetros da Simulação}
+    Os parâmetros utilizados na simulação são definidos no ficheiro de configuração XML e podem ser ajustados através da interface:
+    
+    \begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|l|}
+    \hline
+    \textbf{Parâmetro} & \textbf{Valor} & \textbf{Descrição} \\
+    \hline
+    \texttt{stiffness} & 800.0 & Rigidez das \textit{Structural} e \textit{Shear Springs} \\
+    \texttt{stiffness2} & 400.0 & Rigidez das \textit{Bending Springs} \\
+    \texttt{damping\_coeff} & 8.0 & Coeficiente de amortecimento \\
+    \texttt{M} & 0.1 & Massa de cada partícula (kg) \\
+    \texttt{time\_interval} & 0.001 & Passo temporal da integração (s) \\
+    \texttt{marbel\_radius} & 0.15 & Raio mínimo para auto-colisão \\
+    \hline
+    \end{tabular}
+    \caption{Parâmetros configuráveis da simulação}
+    \end{table}
+
+    \section{Justificação dos Parâmetros}
+    A escolha dos valores dos parâmetros resulta de experimentação iterativa e fundamentação teórica em computação gráfica.
+    
+    \subsection{Rigidez das Molas (Stiffness)}
+    Os valores de \texttt{stiffness} = 800 e \texttt{stiffness2} = 400 foram calibrados considerando:
+    \begin{itemize}
+        \item \textbf{Realismo visual}: Valores demasiado baixos resultam num tecido "elástico" irrealista; valores demasiado altos causam rigidez excessiva
+        \item \textbf{Estabilidade numérica}: Stiffness elevado requer timesteps menores para evitar explosões numéricas (\textit{stiff equations})
+        \item \textbf{Hierarquia de forças}: \texttt{stiffness2} (bending) é metade de \texttt{stiffness} pois as molas de flexão devem ser mais permissivas que as estruturais
+    \end{itemize}
+    
+    \subsection{Coeficiente de Amortecimento}
+    O valor \texttt{damping\_coeff} = 8.0 foi escolhido para:
+    \begin{itemize}
+        \item Dissipar energia suficiente para evitar oscilações perpétuas
+        \item Não sobre-amortecer o sistema, mantendo movimento fluido
+        \item Simular a resistência interna típica de tecidos reais
+    \end{itemize}
+    
+    \subsection{Passo Temporal (Timestep)}
+    O valor $\Delta t = 0.001s$ é crítico para a estabilidade da integração de Euler:
+    \begin{itemize}
+        \item A condição de estabilidade para sistemas mass-spring é aproximadamente $\Delta t < \sqrt{m/k}$
+        \item Com $m = 0.1$ e $k = 800$: $\sqrt{0.1/800} \approx 0.011s$
+        \item O valor escolhido (0.001s) oferece margem de segurança de 10×
+    \end{itemize}
+    
+    \subsection{Integração de Euler vs Alternativas}
+    A escolha da \textbf{integração de Euler} em detrimento de métodos mais sofisticados (Verlet, RK4) justifica-se por:
+    \begin{itemize}
+        \item \textbf{Simplicidade}: Implementação direta em GLSL sem necessidade de buffers adicionais
+        \item \textbf{Suficiência}: Com timestep pequeno (0.001s), Euler produz resultados estáveis e visualmente aceitáveis
+        \item \textbf{Desempenho}: Menos operações por vértice comparado com RK4 (que requer 4 avaliações de força)
+    \end{itemize}
+    
+    Métodos como \textbf{Verlet} ofereceriam maior estabilidade e conservação de energia, sendo preferíveis para timesteps maiores ou simulações de longa duração. No entanto, para demonstração em tempo real com controlo interativo, Euler mostrou-se adequado.
+
+    \section{Pipeline de Renderização}
+    A simulação segue um pipeline com duas fases principais por \textit{frame}:
+    
+    \begin{enumerate}
+        \item \textbf{Compute Pass}: Executa o \textit{compute shader} que calcula todas as forças físicas, atualiza velocidades e posições, e resolve colisões.
+        \item \textbf{Render Pass}: Desenha o tecido e a esfera utilizando os \textit{vertex}, \textit{geometry} e \textit{fragment shaders}.
+    \end{enumerate}
+
+    \section{Implementação das Forças}
+    
+    \subsection{Lei de Hooke}
+    A força elástica entre duas partículas conectadas por uma mola é calculada pela seguinte função GLSL:
+    
+    \begin{lstlisting}[language=C, caption={Implementação da Lei de Hooke em GLSL}]
+vec3 hookes_law(vec3 p1, vec3 p2, float stiffness, float edge_distance) {
+    vec3 v = p1 - p2;
+    float l = length(v);
+    vec3 vec_dir = normalize(v);
+    vec3 x = (l - edge_distance) * vec_dir;
+    return -stiffness * x;
+}
+    \end{lstlisting}
+
+    \subsection{Força de Amortecimento}
+    O amortecimento é proporcional à velocidade relativa entre partículas:
+    
+    \begin{lstlisting}[language=C, caption={Implementação da força de amortecimento}]
+vec3 damping_force(vec3 p1, vec3 p2, vec4 vel1, vec4 vel2, float damping_coeff) {
+    vec3 vec = p1 - p2;
+    vec3 vel = vel1.xyz - vel2.xyz;
+    vec3 vec_dir = normalize(vec);
+    vec3 x = ((vel * vec) / length(vec)) * vec_dir;
+    return -damping_coeff * x;
+}
+    \end{lstlisting}
+
+    \subsection{Gravidade}
+    A força gravitacional é aplicada uniformemente a todas as partículas:
+    \begin{equation}
+    \vec{F}_{gravidade} = M \times \vec{g} = 0.1 \times (0, -9.8, 0)
+    \end{equation}
+
+    \section{Integração Numérica}
+    Para atualizar as posições e velocidades das partículas, utilizamos a \textbf{integração de Euler}, um método simples mas eficaz para simulações em tempo real:
+    
+    \begin{equation}
+    \vec{a} = \frac{\vec{F}_{total}}{M}
+    \end{equation}
+    \begin{equation}
+    \vec{v}_{novo} = \vec{v} + \vec{a} \times \Delta t
+    \end{equation}
+    \begin{equation}
+    \vec{p}_{novo} = \vec{p} + \vec{v}_{novo} \times \Delta t
+    \end{equation}
+    
+    O passo temporal $\Delta t = 0.001s$ foi escolhido suficientemente pequeno para garantir estabilidade numérica.
+
+    \section{Sistema de Colisões}
+    
+    \subsection{Colisão com a Esfera}
+    Quando um vértice penetra o volume da esfera, é reposicionado na superfície:
+    
+    \begin{lstlisting}[language=C, caption={Deteção e resposta à colisão com a esfera}]
+if (length(new_pos.xyz - sphereCenter) < sphereRadius) {
+    vec3 collision_normal = normalize(new_pos.xyz - sphereCenter);
+    new_pos.xyz = sphereCenter + collision_normal * (sphereRadius + 0.01);
+    
+    float vel_towards_sphere = dot(new_vel, collision_normal);
+    if (vel_towards_sphere < 0.0) {
+        new_vel -= vel_towards_sphere * collision_normal * 1.5;
+    }
+    new_vel *= 0.85; // Fricao
+}
+    \end{lstlisting}
+
+    \subsection{Auto-Colisão}
+    Para evitar que o tecido atravesse a si próprio, é implementada deteção de colisão entre vértices não adjacentes. Para otimizar o desempenho, apenas vértices numa vizinhança local (raio 4 na grelha) são verificados, reduzindo a complexidade de $O(n^2)$ para $O(n \times k)$:
+    
+    \begin{lstlisting}[language=C, caption={Deteção de auto-colisão otimizada}]
+int search_radius = 4;
+for (int dz = -search_radius; dz <= search_radius; dz++) {
+    for (int dx = -search_radius; dx <= search_radius; dx++) {
+        // Verificar colisao com vertices nao adjacentes
+        if (length(new_pos.xyz - pos[neighbor_index].xyz) < 2 * marbel_radius) {
+            // Separar vertices e ajustar velocidades
+        }
+    }
+}
+    \end{lstlisting}
+
+    \section{Pontos Fixos e Animação}
+    Os dois cantos superiores do tecido (índices 0 e 24) estão fixos e oscilam no eixo Z para criar movimento dinâmico:
+    
+    \begin{itemize}
+        \item \textbf{Período de warm-up}: Durante os primeiros 5 segundos, o pano estabiliza sob gravidade antes de iniciar a oscilação.
+        \item \textbf{Oscilação}: Após o warm-up, os cantos oscilam sinusoidalmente com amplitude 8.0 e frequência 0.0003.
+    \end{itemize}
+
+    \section{Cálculo de Normais}
+    As normais dos vértices são calculadas dinamicamente no \textit{compute shader} para iluminação correta. Para cada vértice, a normal é a média das normais das faces adjacentes, calculadas através do produto vetorial das arestas.
+
+    \chapter{Resultados Obtidos}
+    A simulação implementada apresenta um comportamento fisicamente plausível do tecido, com as seguintes características observadas:
+    
+    \begin{itemize}
+        \item O pano deforma-se naturalmente sob a ação da gravidade
+        \item As \textit{Structural Springs} mantêm a integridade da malha, evitando esticamento excessivo
+        \item As \textit{Bending Springs} conferem suavidade às dobras do tecido
+        \item O amortecimento reduz oscilações, estabilizando a simulação ao longo do tempo
+        \item A colisão com a esfera funciona corretamente, com o tecido a envolver o objeto
+        \item A auto-colisão previne que o pano atravesse a si próprio
+    \end{itemize}
+    
+    A interface ImGui permite ajustar em tempo real a posição da esfera e os parâmetros físicos (rigidez e massa), possibilitando experimentar diferentes comportamentos do tecido.
+
+    \chapter{Análise Crítica e Comparação}
+    
+    \section{Pontos Fortes da Implementação}
+    \begin{itemize}
+        \item \textbf{Desempenho}: A utilização de \textit{compute shaders} permite processar os 625 vértices em paralelo, garantindo execução em tempo real.
+        \item \textbf{Interatividade}: Os parâmetros ajustáveis permitem experimentação e demonstração de diferentes comportamentos.
+        \item \textbf{Robustez}: O sistema de colisões previne artefactos visuais como interpenetrações.
+    \end{itemize}
+    
+    \section{Limitações}
+    \begin{itemize}
+        \item \textbf{Integração de Euler}: Embora funcional, métodos como Verlet ofereceriam maior estabilidade para passos temporais maiores.
+        \item \textbf{Resolução da malha}: A malha de $25 \times 25$ representa um compromisso entre detalhe e desempenho.
+        \item \textbf{Auto-colisão}: A verificação local pode falhar em casos de deformação extrema.
+    \end{itemize}
+    
+    \section{Comparação com Alternativas}
+    Existem várias abordagens alternativas para simulação de tecidos, cada uma com características distintas. Nesta secção, comparamos o \textit{Mass-Spring Model} com as principais alternativas.
+    
+    \subsection{Position Based Dynamics (PBD)}
+    O método \textit{Position Based Dynamics}, introduzido por Müller et al. (2007), difere fundamentalmente do \textit{Mass-Spring Model} ao manipular diretamente as posições das partículas em vez de calcular forças.
+    
+    \textbf{Funcionamento:} Em cada iteração, PBD aplica \textit{constraints} (restrições) que corrigem as posições das partículas para satisfazer condições como distância fixa entre partículas ou limites de volume. O algoritmo resolve iterativamente estas restrições através de projeções.
+    
+    \textbf{Vantagens do PBD:}
+    \begin{itemize}
+        \item Incondicionalmente estável -- não sofre de explosões numéricas independentemente do timestep
+        \item Controlo intuitivo através de restrições geométricas
+        \item Excelente para aplicações interativas e jogos
+    \end{itemize}
+    
+    \textbf{Desvantagens do PBD:}
+    \begin{itemize}
+        \item Comportamento dependente do número de iterações e timestep
+        \item Não conserva energia de forma fisicamente correta
+        \item Rigidez aparente varia com a resolução da malha
+    \end{itemize}
+    
+    \textbf{Porquê escolhemos Mass-Spring:} Embora PBD seja popular em jogos, o \textit{Mass-Spring Model} oferece uma base física mais clara (Lei de Hooke) e permite relacionar diretamente os parâmetros com propriedades físicas reais do tecido.
+    
+    \subsection{Finite Element Method (FEM)}
+    O \textit{Finite Element Method} é a abordagem mais rigorosa fisicamente, modelando o tecido como um meio contínuo discretizado em elementos finitos.
+    
+    \textbf{Funcionamento:} O tecido é tratado como um material elástico contínuo, com propriedades definidas por tensores de stress e strain. A malha é dividida em elementos (tipicamente triângulos) e as equações de elasticidade são resolvidas numericamente.
+    
+    \textbf{Vantagens do FEM:}
+    \begin{itemize}
+        \item Precisão física elevada -- baseado em mecânica dos meios contínuos
+        \item Comportamento independente da resolução da malha
+        \item Permite modelar materiais anisotrópicos (diferentes propriedades em diferentes direções)
+        \item Adequado para simulações científicas e industriais (design de vestuário, airbags)
+    \end{itemize}
+    
+    \textbf{Desvantagens do FEM:}
+    \begin{itemize}
+        \item Complexidade de implementação significativamente maior
+        \item Custo computacional elevado -- requer resolução de sistemas lineares grandes
+        \item Mais difícil de paralelizar eficientemente na GPU
+        \item Overkill para aplicações puramente visuais
+    \end{itemize}
+    
+    \textbf{Porquê escolhemos Mass-Spring:} Para uma demonstração em tempo real com controlo interativo, a complexidade adicional do FEM não se justifica. O \textit{Mass-Spring Model} atinge resultados visualmente convincentes com uma fração do esforço de implementação.
+    
+    \subsection{Métodos de Integração: Euler vs Verlet vs RK4}
+    A escolha do método de integração numérica é ortogonal à escolha do modelo físico, mas afeta significativamente a estabilidade e precisão.
+    
+    \textbf{Euler Explícito} (utilizado neste projeto):
+    \begin{equation}
+    \vec{v}_{n+1} = \vec{v}_n + \vec{a}_n \cdot \Delta t, \quad \vec{x}_{n+1} = \vec{x}_n + \vec{v}_{n+1} \cdot \Delta t
+    \end{equation}
+    Simples mas requer timesteps pequenos para estabilidade.
+    
+    \textbf{Verlet Integration}:
+    \begin{equation}
+    \vec{x}_{n+1} = 2\vec{x}_n - \vec{x}_{n-1} + \vec{a}_n \cdot \Delta t^2
+    \end{equation}
+    Não armazena velocidade explicitamente, melhor conservação de energia, mais estável para o mesmo timestep. Requer buffer adicional para posições anteriores.
+    
+    \textbf{Runge-Kutta 4 (RK4)}:
+    Avalia a derivada em 4 pontos por timestep, oferecendo precisão de 4ª ordem. Excelente para simulações precisas mas 4× mais caro computacionalmente.
+    
+    \textbf{Justificação da escolha:} Optámos por Euler pela simplicidade de implementação em GLSL e porque, com $\Delta t = 0.001s$, a estabilidade é garantida. Para trabalho futuro, Verlet seria a melhoria mais imediata.
+    
+    \subsection{Tabela Comparativa}
+    
+    \begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+    \hline
+    \textbf{Critério} & \textbf{Mass-Spring} & \textbf{PBD} & \textbf{FEM} \\
+    \hline
+    Complexidade de implementação & Baixa & Média & Alta \\
+    Desempenho computacional & Alto & Alto & Baixo \\
+    Precisão física & Média & Baixa & Alta \\
+    Estabilidade numérica & Média & Alta & Média \\
+    Paralelização GPU & Fácil & Fácil & Difícil \\
+    Controlo de parâmetros & Intuitivo & Geométrico & Físico \\
+    Aplicação típica & Jogos, demos & Jogos, VR & CAD, ciência \\
+    \hline
+    \end{tabular}
+    \caption{Comparação entre métodos de simulação de tecidos}
+    \end{table}
+    
+    \subsection{Conclusão da Comparação}
+    O \textit{Mass-Spring Model} representa o melhor compromisso para os objetivos deste projeto: demonstração visual em tempo real com interatividade. Oferece base física suficiente para comportamento realista, permite implementação eficiente em \textit{compute shaders}, e os parâmetros são intuitivos de ajustar.
+    
+    Para aplicações que exijam maior precisão física (e.g., simulação de airbags automóveis), FEM seria preferível. Para jogos AAA com muitos objetos deformáveis simultâneos, PBD poderia ser mais adequado pela sua estabilidade incondicional.
+    
+    \chapter{Conclusão}
+    Este projeto demonstra com sucesso a implementação de uma simulação de tecido em tempo real utilizando o modelo \textit{Mass-Spring}. A combinação de \textit{compute shaders} para física na GPU com uma interface interativa permite visualizar e experimentar o comportamento do tecido sob diferentes condições.
+    
+    Os objetivos principais foram alcançados: o tecido reage realisticamente à gravidade, interage corretamente com a esfera de colisão, e mantém-se estável ao longo do tempo graças ao amortecimento implementado.
+    
+    Como trabalho futuro, seria interessante explorar:
+    \begin{itemize}
+        \item Métodos de integração mais avançados (Verlet, RK4)
+        \item Aumento da resolução da malha com otimizações de desempenho
+        \item Adição de forças externas como vento
+        \item Técnicas de \textit{constraint solving} para maior realismo
+    \end{itemize}
+
+    \chapter{Referências}
+    
+    \begin{thebibliography}{9}
+    
+    \bibitem{fisher}
+    Fisher, M. (2014). \textit{Cloth Simulation}. Stanford University.
+    \url{https://graphics.stanford.edu/~mdfisher/cloth.html}
+    
+    \bibitem{provot}
+    Provot, X. (1995). \textit{Deformation Constraints in a Mass-Spring Model to Describe Rigid Cloth Behavior}. Graphics Interface.
+    
+    \bibitem{baraff}
+    Baraff, D. \& Witkin, A. (1998). \textit{Large Steps in Cloth Simulation}. SIGGRAPH '98.
+    
+    \bibitem{muller}
+    Müller, M., Heidelberger, B., Hennix, M. \& Ratcliff, J. (2007). \textit{Position Based Dynamics}. Journal of Visual Communication and Image Representation.
+    
+    \end{thebibliography}
+    
+
+\end{document}

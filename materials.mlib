@@ -116,7 +116,7 @@
                     <valueof uniform="damping_coeff" type="RENDERER" component="damping_coeff" />
                     <valueof uniform="M" type="RENDERER" component="M" />
                     <valueof uniform="time_interval" type="COLOR" component="time_interval" />
-                    <valueof uniform="marbel_radius" type="RENDERER" component="marbel_radius" />
+                    <valueof uniform="collision_radius" type="RENDERER" component="collision_radius" />
                     <valueof uniform="sphere_pos" type="SCENE" context="Sphere" component="TRANSLATE" />
                     <valueof uniform="sphere_scale" type="SCENE" context="Sphere" component="SCALE" />
                 </values>

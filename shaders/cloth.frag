@@ -1,6 +1,5 @@
 #version 430
 
-//uniform
 // uniform vec4 diffuse;
 uniform vec4 l_dir; // world space
 uniform mat4 m_view;
