@@ -45,6 +45,8 @@
 \usepackage{listings} % para por codigo
 \usepackage{float}
 \usepackage{indentfirst}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
 
 \lstdefinestyle{mystyle}{
     backgroundcolor=\color{backcolour},
@@ -270,6 +272,74 @@
         \item \textbf{Compute Pass}: Executa o \textit{compute shader} que calcula todas as forças físicas, atualiza velocidades e posições, e resolve colisões.
         \item \textbf{Render Pass}: Desenha o tecido e a esfera utilizando os \textit{vertex}, \textit{geometry} e \textit{fragment shaders}.
     \end{enumerate}
+    
+    \begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=0.8cm, auto, scale=0.85, transform shape,
+        % Estilos dos nós
+        compute/.style={rectangle, rounded corners, draw=blue!70, fill=blue!20, 
+            text width=2.2cm, minimum height=0.9cm, text centered, font=\small\bfseries},
+        shader/.style={rectangle, rounded corners, draw=green!70, fill=green!20,
+            text width=1.6cm, minimum height=0.8cm, text centered, font=\scriptsize},
+        buffer/.style={cylinder, draw=orange!70, fill=orange!20, shape border rotate=90,
+            aspect=0.3, minimum height=0.7cm, minimum width=1.2cm, font=\scriptsize},
+        output/.style={rectangle, rounded corners, draw=purple!70, fill=purple!20,
+            text width=1.4cm, minimum height=0.7cm, text centered, font=\small\bfseries},
+        arrow/.style={->, >=stealth, thick},
+        dashedarrow/.style={->, >=stealth, thick, dashed}
+    ]
+    
+    % Compute Pass
+    \node[compute] (comp) {Compute\\Shader};
+    
+    % Buffers (SSBOs)
+    \node[buffer, right=1cm of comp] (buffers) {SSBOs};
+    
+    % Render Pass - Shaders
+    \node[shader, right=1cm of buffers] (vert) {Vertex};
+    \node[shader, right=0.5cm of vert] (geom) {Geometry};
+    \node[shader, right=0.5cm of geom] (frag) {Fragment};
+    
+    % Output
+    \node[output, right=0.5cm of frag] (screen) {Ecrã};
+    
+    % Setas
+    \draw[arrow] (comp) -- node[above, font=\tiny] {write} (buffers);
+    \draw[arrow] (buffers) -- node[above, font=\tiny] {read} (vert);
+    \draw[arrow] (vert) -- (geom);
+    \draw[arrow] (geom) -- (frag);
+    \draw[arrow] (frag) -- (screen);
+    
+    % Loop de feedback
+    \draw[dashedarrow] (screen.south) -- ++(0,-0.5) -| node[near start, below, font=\tiny] {próximo frame} (comp.south);
+    
+    % Labels das fases
+    \node[above=0.2cm of comp, font=\tiny\itshape, blue!70] {Compute Pass};
+    \node[above=0.2cm of geom, font=\tiny\itshape, green!50!black] {Render Pass};
+    
+    \end{tikzpicture}
+    \caption{Pipeline de renderização da simulação de tecido}
+    \label{fig:pipeline}
+    \end{figure}
+    
+    \subsection{Compute Pass (Física)}
+    O \textit{compute shader} (\texttt{cloth.comp}) é executado primeiro e realiza:
+    \begin{itemize}
+        \item Cálculo das forças de mola (Lei de Hooke) e amortecimento
+        \item Aplicação da gravidade
+        \item Integração numérica (Euler) para atualizar velocidades e posições
+        \item Deteção e resposta a colisões (esfera e auto-colisão)
+        \item Cálculo das normais para iluminação
+    \end{itemize}
+    Os resultados são escritos nos \textit{SSBOs} partilhados.
+    
+    \subsection{Render Pass (Visualização)}
+    A fase de renderização utiliza três shaders em sequência:
+    \begin{itemize}
+        \item \textbf{Vertex Shader} (\texttt{cloth.vert}): Lê as posições atualizadas dos SSBOs e passa os índices dos vértices.
+        \item \textbf{Geometry Shader} (\texttt{cloth.geom}): Recebe triângulos e emite \textbf{duas faces} --- frontal e traseira com normais invertidas --- permitindo que o tecido seja visível de ambos os lados.
+        \item \textbf{Fragment Shader} (\texttt{cloth.frag}): Aplica iluminação difusa e textura ao tecido.
+    \end{itemize}
 
     \section{Implementação das Forças}
     
@@ -339,19 +409,42 @@ if (length(new_pos.xyz - sphereCenter) < sphereRadius) {
     \end{lstlisting}
 
     \subsection{Auto-Colisão}
-    Para evitar que o tecido atravesse a si próprio, é implementada deteção de colisão entre vértices não adjacentes. Para otimizar o desempenho, apenas vértices numa vizinhança local (raio 4 na grelha) são verificados, reduzindo a complexidade de $O(n^2)$ para $O(n \times k)$:
+    Para evitar que o tecido atravesse a si próprio, é implementada deteção de colisão entre vértices não adjacentes. Cada vértice é tratado como uma esfera com raio \texttt{collision\_radius}, e quando duas esferas se sobrepõem, os vértices são separados e as suas velocidades ajustadas.
     
-    \begin{lstlisting}[language=C, caption={Deteção de auto-colisão otimizada}]
-int search_radius = 4;
-for (int dz = -search_radius; dz <= search_radius; dz++) {
-    for (int dx = -search_radius; dx <= search_radius; dx++) {
-        // Verificar colisao com vertices nao adjacentes
-        if (length(new_pos.xyz - pos[neighbor_index].xyz) < 2 * marbel_radius) {
-            // Separar vertices e ajustar velocidades
+    O algoritmo verifica todos os pares de vértices, excluindo:
+    \begin{itemize}
+        \item O próprio vértice ($i \neq index$)
+        \item Vértices adjacentes (ligados por molas), pois estes têm forças de mola a controlá-los
+    \end{itemize}
+    
+    \begin{lstlisting}[language=C, caption={Deteção e resposta à auto-colisão}]
+for (int i = 0; i < height * width; i++) {
+    if (i != index && !is_adjacent(index, i) && 
+        length(new_pos.xyz - pos[i].xyz) < 2 * collision_radius) {
+        
+        // Calcular normal de colisao (direcao de separacao)
+        vec3 n = normalize(new_pos.xyz - pos[i].xyz);
+        
+        // Empurrar vertice para fora da zona de colisao
+        new_pos.xyz = pos[i].xyz + n * 2 * collision_radius;
+        
+        // Ajustar velocidade: remover componente em direcao ao outro vertice
+        float vel_towards_grid = dot(new_vel, n);
+        if (vel_towards_grid < 0.0) {
+            new_vel -= vel_towards_grid * n * 1.2; // Fator de bounce
         }
     }
 }
     \end{lstlisting}
+    
+    \noindent\textbf{Explicação do algoritmo:}
+    \begin{enumerate}
+        \item \textbf{Deteção}: Se a distância entre dois vértices for menor que $2 \times r$ (onde $r$ é o raio de colisão), há sobreposição.
+        \item \textbf{Separação}: O vértice é reposicionado na superfície da esfera de colisão do outro vértice.
+        \item \textbf{Resposta de velocidade}: Se o vértice se move em direção ao outro (velocidade negativa na direção normal), essa componente é invertida com um fator de 1.2, simulando um pequeno \textit{bounce}.
+    \end{enumerate}
+    
+    \noindent\textbf{Nota sobre complexidade:} Esta implementação tem complexidade $O(n^2)$ por frame, o que é aceitável para malhas pequenas (625 vértices). Para malhas maiores, técnicas como \textit{spatial hashing} ou \textit{bounding volume hierarchies} poderiam ser utilizadas para otimização.
 
     \section{Pontos Fixos e Animação}
     Os dois cantos superiores do tecido (índices 0 e 24) estão fixos e oscilam no eixo Z para criar movimento dinâmico:
@@ -362,7 +455,70 @@ for (int dz = -search_radius; dz <= search_radius; dz++) {
     \end{itemize}
 
     \section{Cálculo de Normais}
-    As normais dos vértices são calculadas dinamicamente no \textit{compute shader} para iluminação correta. Para cada vértice, a normal é a média das normais das faces adjacentes, calculadas através do produto vetorial das arestas.
+    As normais dos vértices são calculadas dinamicamente no \textit{compute shader} para iluminação correta (\textit{smooth shading}). Para cada vértice, a normal é calculada como a \textbf{média das normais das faces adjacentes}, usando o produto vetorial das arestas.
+    
+    \subsection{Conceito}
+    Cada vértice interior pode ter até 4 quadrantes (faces) adjacentes. A normal do vértice é a soma normalizada das normais dessas faces:
+    
+    \begin{verbatim}
+           UP
+            |
+      LEFT--*--RIGHT
+            |
+          DOWN
+    \end{verbatim}
+    
+    Os 4 quadrantes são percorridos em sentido anti-horário para manter consistência na orientação das normais.
+    
+    \subsection{Implementação}
+    
+    \begin{lstlisting}[language=C, caption={Verificação de vizinhos disponíveis}]
+// Verificar se o vertice nao esta na borda
+bool hasLeft = (x > 0);
+bool hasRight = (x < width - 1);
+bool hasUp = (z > 0);
+bool hasDown = (z < height - 1);
+
+// Obter posicoes dos vizinhos (ou posicao atual se na borda)
+vec3 left = hasLeft ? pos[index - 1].xyz : currentPos;
+vec3 right = hasRight ? pos[index + 1].xyz : currentPos;
+vec3 up = hasUp ? pos[index - width].xyz : currentPos;
+vec3 down = hasDown ? pos[index + width].xyz : currentPos;
+    \end{lstlisting}
+    
+    \begin{lstlisting}[language=C, caption={Cálculo da normal por produto vetorial}]
+vec3 vertexNormal = vec3(0.0);
+
+// Quadrante NW: cross(left - current, up - current)
+if (hasLeft && hasUp) {
+    vertexNormal += cross(left - currentPos, up - currentPos);
+}
+// Quadrante NE: cross(up - current, right - current)
+if (hasUp && hasRight) {
+    vertexNormal += cross(up - currentPos, right - currentPos);
+}
+// Quadrante SE: cross(right - current, down - current)
+if (hasRight && hasDown) {
+    vertexNormal += cross(right - currentPos, down - currentPos);
+}
+// Quadrante SW: cross(down - current, left - current)
+if (hasDown && hasLeft) {
+    vertexNormal += cross(down - currentPos, left - currentPos);
+}
+
+// Normalizar resultado (com fallback para (0,1,0) se degenerado)
+if (length(vertexNormal) > 0.001) {
+    normals[index] = vec4(normalize(vertexNormal), 0.0);
+} else {
+    normals[index] = vec4(0.0, 1.0, 0.0, 0.0);
+}
+    \end{lstlisting}
+    
+    \subsection{Porquê Produto Vetorial?}
+    O \textbf{produto vetorial} de duas arestas adjacentes produz um vetor perpendicular ao plano definido por essas arestas --- ou seja, a normal da face. A ordem dos operandos (sentido anti-horário) garante que todas as normais apontam para o mesmo lado do tecido.
+    
+    \subsection{Tratamento de Bordas}
+    Vértices nas bordas do tecido têm menos de 4 faces adjacentes. O código verifica a existência de cada vizinho antes de calcular o produto vetorial correspondente, garantindo que apenas faces válidas contribuem para a normal final.
 
     \chapter{Resultados Obtidos}
     A simulação implementada apresenta um comportamento fisicamente plausível do tecido, com as seguintes características observadas:

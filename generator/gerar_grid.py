@@ -115,8 +115,6 @@ class ClothGenerator:
                             indices_9.append(dist_h)
                         else:
                              # O próprio vértice (distância 0 ou placeholder)
-                             # No código original, parecia ser ignorado ou tratado como -1 dependendo da lógica
-                             # Aqui coloco 0.0 pois é a distância para si mesmo
                             indices_9.append(0.0) 
                     else:
                         indices_9.append(-1)
@@ -143,8 +141,7 @@ class ClothGenerator:
         # --- OBJ FILE ---
         with open(obj_path, 'w') as f:
             for index, v in enumerate(self.vertices):
-                f.write(f"v {v[0]:.4f} {index} {v[2]:.4f}\n") # Index no Y como no original?
-                # Se quiseres Y real: f.write(f"v {v[0]:.4f} {v[1]:.4f} {v[2]:.4f}\n")
+                f.write(f"v {v[0]:.4f} {index} {v[2]:.4f}\n")
             
             for tex in self.text_coords:
                 f.write(f"vt {tex[0]:.4f} {tex[1]:.4f}\n")
@@ -208,14 +205,12 @@ class ClothGenerator:
         self.write_files(output_path)
         print("Concluído.")
 
-# --- EXEMPLO DE UTILIZAÇÃO ---
 if __name__ == "__main__":
     divisions_h = 25
     divisions_v = 25
     height = 10.0
     width = 10.0
     
-    # Prender os cantos da primeira linha (índices 0 e 24)
     stuck_verts = [0, divisions_h - 1]
     
     generator = ClothGenerator(height, width, divisions_h, divisions_v, stuck_verts)
