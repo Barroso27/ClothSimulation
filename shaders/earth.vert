@@ -20,12 +20,9 @@ out vec3 ld;
 out vec2 texCoord;
 
 void main () {
+
 	texCoord = texCoord0;
 	n = normalize(m_normal * normal);
-	
-	// Esfera estática - posição definida pelo TRANSLATE no XML
-	// Não aplicamos animação para coincidir com a esfera de colisão
-	
 	eye = -(m_viewModel * position);
 	ld = normalize(vec3(m_view * -l_dir));
 
