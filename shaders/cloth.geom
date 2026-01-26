@@ -31,13 +31,13 @@ void main() {
 	vec3 edge2 = pos[v_index[2]].xyz - pos[v_index[0]].xyz;
 	vec3 faceNormal = normalize(cross(edge1, edge2));
 
-	// Usa as normais já calculadas no buffer (do compute shader anterior)
-	// ou usa a normal da face se preferires flat shading
+	// Usamos as normais já calculadas no buffer (do compute shader anterior)
+	// ou usa a normal da face	
 	vec3 n0 = normalize(normals[v_index[0]].xyz);
 	vec3 n1 = normalize(normals[v_index[1]].xyz);
 	vec3 n2 = normalize(normals[v_index[2]].xyz);
 	
-	// Se a normal do buffer estiver zerada, usa a normal da face
+	// Se a normal do buffer estiver a zeros, usamos a normal da face
 	if (length(normals[v_index[0]].xyz) < 0.001) n0 = faceNormal;
 	if (length(normals[v_index[1]].xyz) < 0.001) n1 = faceNormal;
 	if (length(normals[v_index[2]].xyz) < 0.001) n2 = faceNormal;
