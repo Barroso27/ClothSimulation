@@ -26,9 +26,9 @@ layout(std430, binding = 8) buffer adjBuffer2 {
     float adjacents2[];
 };
 
-// Posição da esfera (xyz) controlada pela interface
+
 uniform vec4 sphere_pos;
-// Escala da esfera (usamos x como raio)
+
 uniform vec4 sphere_scale;
 
 uniform float timer;
