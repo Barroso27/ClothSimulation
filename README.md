@@ -1,6 +1,6 @@
-# Simulação de Tecido com OpenGL
+# Simulação de Tecido com GLSL
 
-Este projeto consiste numa simulação de tecido (cloth simulation) utilizando OpenGL, com shaders personalizados para renderização realista e efeitos visuais avançados. O trabalho foi desenvolvido no contexto da unidade curricular de Visualização e Técnicas de Renderização (VTR).
+Este projeto consiste numa simulação de tecido (cloth simulation) utilizando GLSL, com shaders personalizados para renderização realista e efeitos visuais avançados. O trabalho foi desenvolvido no contexto da unidade curricular de Visualização em Tempo Real (VTR).
 
 
 ## Exemplo de Simulação
