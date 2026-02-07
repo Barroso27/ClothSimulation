@@ -1,3 +1,5 @@
+Final Grade: 19
+
 # Simulação de Tecido com GLSL
 
 Este projeto consiste numa simulação de tecido (cloth simulation) utilizando GLSL, com shaders personalizados para renderização realista e efeitos visuais avançados. O trabalho foi desenvolvido no contexto da unidade curricular de Visualização em Tempo Real (VTR).
